@@ -75,12 +75,18 @@ export function Footer() {
           <p className="text-xs uppercase tracking-widest text-on-primary-container">
             © {new Date().getFullYear()} JP Rentals. All rights reserved.
           </p>
-          <div className="flex items-center gap-6 text-sm font-medium">
-            <Link href="/policy" className="text-on-primary-container hover:text-secondary-fixed transition-colors">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium">
+            <Link href="/privacy-policy" className="text-on-primary-container hover:text-secondary-fixed transition-colors">
               Privacy Policy
             </Link>
-            <Link href="/policy" className="text-on-primary-container hover:text-secondary-fixed transition-colors">
-              Terms of Service
+            <Link href="/terms-and-conditions" className="text-on-primary-container hover:text-secondary-fixed transition-colors">
+              Terms &amp; Conditions
+            </Link>
+            <Link href="/cancellation-refund-policy" className="text-on-primary-container hover:text-secondary-fixed transition-colors">
+              Cancellation &amp; Refund
+            </Link>
+            <Link href="/delivery-pickup-policy" className="text-on-primary-container hover:text-secondary-fixed transition-colors">
+              Delivery &amp; Pickup
             </Link>
           </div>
         </div>

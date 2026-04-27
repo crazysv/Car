@@ -132,7 +132,6 @@ function formatPaymentError(error: unknown): string {
   if (error instanceof Error && error.message) {
     return error.message;
   }
-
   return "Something went wrong while processing the payment. Please try again.";
 }
 
@@ -264,6 +263,8 @@ export function BookingForm() {
 
     try {
       const payload = buildBookingPayload(form, selectedVehicle, days);
+
+      /* ---- Offline path: submit booking request only ---- */
       if (payload.paymentMode === "offline") {
         const bookingResult = await submitBooking(payload);
 
@@ -276,6 +277,7 @@ export function BookingForm() {
         throw new Error(bookingResult.error || "Unable to submit booking request");
       }
 
+      /* ---- Online path: create order → Razorpay checkout → verify ---- */
       const bookingRef = generateBookingRef();
       const order = await createPaymentOrder({
         bookingRef,
