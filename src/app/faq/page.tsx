@@ -8,7 +8,7 @@ import { Button } from "@/components/button";
 export const metadata: Metadata = {
   title: "FAQ",
   description:
-    "Find answers to common questions about JP Rentals &mdash; booking, payment, documents, delivery, cancellation, and more.",
+    "Find answers to common questions about JP Rentals - booking, payment, documents, delivery, cancellation, and more.",
 };
 
 export default function FAQPage() {

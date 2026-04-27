@@ -21,7 +21,7 @@ const trustFeatures: TrustFeature[] = [
   {
     icon: "location_on",
     title: "Coverage Area",
-    description: `Serving ${siteConfig.location.region} with free delivery available for long-term rentals and premium bookings within our network.`,
+    description: `Serving ${siteConfig.location.region} with free doorstep delivery across the Tricity region and surrounding areas.`,
   },
 ];
 
@@ -77,7 +77,7 @@ export function TrustGrid() {
             </div>
             <div>
               <p className="text-xs font-bold tracking-widest uppercase text-outline mb-1">
-                24/7 Concierge
+                Booking Support
               </p>
               <p className="text-primary font-bold">
                 {siteConfig.phoneFormatted}

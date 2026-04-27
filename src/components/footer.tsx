@@ -64,7 +64,7 @@ export function Footer() {
               </li>
               <li>
                 <Link href="/contact" className="flex items-center gap-2 text-on-primary-container hover:text-secondary-fixed transition-all">
-                  <span className="material-symbols-outlined text-base">near_me</span> Contact Concierge
+                  <span className="material-symbols-outlined text-base">near_me</span> Contact Us
                 </Link>
               </li>
             </ul>
@@ -73,7 +73,7 @@ export function Footer() {
 
         <div className="w-full pt-10 border-t border-slate-800 text-center flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-xs uppercase tracking-widest text-on-primary-container">
-            © {new Date().getFullYear()} JP Rentals. All rights reserved.
+            (c) {new Date().getFullYear()} JP Rentals. All rights reserved.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm font-medium">
             <Link href="/privacy-policy" className="text-on-primary-container hover:text-secondary-fixed transition-colors">

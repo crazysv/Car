@@ -47,7 +47,7 @@ export const siteConfig = {
       { label: "Self-Drive Rental", href: "/fleet" },
       { label: "Free Delivery", href: "/#why-us" },
       { label: "Online Booking", href: "/book" },
-      { label: "Booking Terms", href: "/policy" },
+      { label: "Booking Terms", href: "/terms-and-conditions" },
     ],
   },
 } as const;

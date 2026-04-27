@@ -8,7 +8,7 @@ import { Button } from "@/components/button";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Get in touch with JP Rentals for bookings, questions, or support. Based in Modern Valley, Kharar &mdash; serving Punjab & Haryana.",
+    "Get in touch with JP Rentals for bookings, questions, or support. Based in Modern Valley, Kharar, serving Punjab & Haryana.",
 };
 
 export default function ContactPage() {

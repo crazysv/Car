@@ -100,7 +100,7 @@ export default function Home() {
               <HighlightBox icon="directions_car" value="13+" label="Premium Vehicles" />
               <HighlightBox icon="map" value="2" label="States Covered" />
               <HighlightBox icon="stars" value="Free" label="Doorstep Delivery" />
-              <HighlightBox icon="support_agent" value="24/7" label="Local Support" />
+              <HighlightBox icon="support_agent" value="7 Days" label="Dedicated Support" />
             </div>
           </div>
         </div>

@@ -12,7 +12,7 @@ const manrope = Manrope({
 
 export const metadata: Metadata = {
   title: {
-    default: "JP Rentals &mdash; Premium Self-Drive Car Rental in Kharar",
+    default: "JP Rentals - Premium Self-Drive Car Rental in Kharar",
     template: "%s | JP Rentals",
   },
   description:
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
     "premium car rental",
   ],
   openGraph: {
-    title: "JP Rentals &mdash; Premium Self-Drive Car Rental",
+    title: "JP Rentals - Premium Self-Drive Car Rental",
     description:
       "Premium self-drive car rental in Kharar, Punjab & Haryana. Free delivery, online payment, curated fleet.",
     siteName: "JP Rentals",
