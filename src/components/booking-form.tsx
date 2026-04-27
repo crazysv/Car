@@ -494,7 +494,7 @@ function PostSubmissionView({
           <h2 className="text-display-sm text-primary mb-2">
             {statusHeadline(result.status)}
           </h2>
-          <p className="font-body-lg text-outline mb-8 max-w-md mx-auto">
+          <p className="font-body-lg text-outline mb-8 max-w-[28rem] mx-auto">
             {statusDescription(result.status, isOnline)}
           </p>
 
@@ -504,7 +504,7 @@ function PostSubmissionView({
           </div>
 
           {/* Booking details */}
-          <div className="bg-surface rounded-xl border border-outline-variant p-6 max-w-md mx-auto mb-8 text-left space-y-3">
+          <div className="bg-surface rounded-xl border border-outline-variant p-6 max-w-[28rem] mx-auto mb-8 text-left space-y-3">
             <SummaryLine label="Booking Ref" value={result.bookingRef} bold />
             <SummaryLine label="Name" value={form.fullName} />
             <SummaryLine label="Phone" value={form.phone} />
@@ -537,7 +537,7 @@ function PostSubmissionView({
           </div>
 
           {/* Next steps */}
-          <div className="bg-surface-container-highest rounded-xl p-5 border border-outline-variant/50 max-w-md mx-auto mb-8 text-left">
+          <div className="bg-surface-container-highest rounded-xl p-5 border border-outline-variant/50 max-w-[28rem] mx-auto mb-8 text-left">
             <p className="font-body-sm font-bold text-primary mb-2 flex items-center gap-1">
               <span className="material-symbols-outlined text-[18px]">info</span> What happens next?
             </p>

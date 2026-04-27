@@ -23,7 +23,7 @@ export default function FAQPage() {
           <h1 className="text-display-md text-white mb-4">
             Frequently Asked Questions
           </h1>
-          <p className="font-body-lg text-white/70 max-w-lg mx-auto">
+          <p className="font-body-lg text-white/70 max-w-[32rem] mx-auto">
             Everything you need to know about renting a car from JP Rentals.
           </p>
         </div>
@@ -55,7 +55,7 @@ export default function FAQPage() {
 
       {/* Need Help */}
       <Section variant="sand">
-        <div className="text-center max-w-lg mx-auto">
+        <div className="text-center max-w-[32rem] mx-auto">
           <h2 className="font-headline-lg text-primary mb-4">
             Still Have Questions?
           </h2>

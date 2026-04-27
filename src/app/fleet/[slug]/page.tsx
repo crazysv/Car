@@ -198,7 +198,7 @@ export default async function VehicleDetailPage(
           <h2 className="font-headline-lg text-white mb-4">
             Ready to Book?
           </h2>
-          <p className="font-body-lg text-white/70 mb-8 max-w-md mx-auto">
+          <p className="font-body-lg text-white/70 mb-8 max-w-[28rem] mx-auto">
             Reserve your {vehicle.name} today with free delivery in Kharar and
             surrounding areas.
           </p>

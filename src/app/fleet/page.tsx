@@ -22,7 +22,7 @@ export default function FleetPage() {
           <h1 className="text-display-md text-white mb-4">
             Explore Our Fleet
           </h1>
-          <p className="font-body-lg text-white/70 max-w-lg mx-auto">
+          <p className="font-body-lg text-white/70 max-w-[32rem] mx-auto">
             Premium self-drive vehicles with free delivery across Punjab &
             Haryana. Choose your perfect ride.
           </p>
@@ -54,7 +54,7 @@ export default function FleetPage() {
           <h2 className="font-headline-lg text-white mb-4">
             Found Your Ride?
           </h2>
-          <p className="font-body-lg text-white/70 mb-8 max-w-md mx-auto">
+          <p className="font-body-lg text-white/70 mb-8 max-w-[28rem] mx-auto">
             Book now and get free delivery to your doorstep in Kharar and
             surrounding areas.
           </p>

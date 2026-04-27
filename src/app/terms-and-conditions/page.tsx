@@ -14,7 +14,7 @@ export default function TermsPage() {
         <div className="py-14 md:py-24 text-center">
           <span className="font-label-bold uppercase tracking-widest text-secondary-fixed mb-3 block">Legal</span>
           <h1 className="text-display-md text-white mb-4">Terms and Conditions</h1>
-          <p className="font-body-lg text-white/70 max-w-lg mx-auto">
+          <p className="font-body-lg text-white/70 max-w-[32rem] mx-auto">
             Please read these terms carefully before using our services.
           </p>
         </div>

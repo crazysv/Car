@@ -22,9 +22,15 @@ export function BookingStrip({ variant = "hero" }: { variant?: "hero" | "inline"
   };
 
   const inputClasses = `
-    w-full pl-10 pr-4 py-3 text-sm font-semibold text-on-surface bg-surface-container-low rounded-lg
+    w-full min-w-0 pl-10 pr-4 py-3 text-sm font-semibold text-on-surface bg-surface-container-low rounded-lg
     border border-outline-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all
     appearance-none
+  `;
+
+  const selectClasses = `
+    w-full min-w-0 pl-10 pr-10 py-3 text-sm font-semibold text-on-surface bg-surface-container-low rounded-lg
+    border border-outline-variant focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all
+    appearance-none cursor-pointer truncate
   `;
 
   const labelClasses = "block text-xs font-bold uppercase tracking-widest text-outline mb-2";
@@ -34,7 +40,7 @@ export function BookingStrip({ variant = "hero" }: { variant?: "hero" | "inline"
       onSubmit={handleSubmit}
       className="bg-white rounded-2xl shadow-elevated p-6 md:p-8"
     >
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 lg:gap-5 items-end">
         {/* Pickup Date */}
         <div className="relative">
           <label htmlFor="strip-pickup" className={labelClasses}>
@@ -80,7 +86,7 @@ export function BookingStrip({ variant = "hero" }: { variant?: "hero" | "inline"
               id="strip-car"
               value={preferredCar}
               onChange={(e) => setPreferredCar(e.target.value)}
-              className={`${inputClasses} cursor-pointer`}
+              className={selectClasses}
             >
               <option value="">Any Vehicle</option>
               {fleet.map((v) => (
@@ -104,7 +110,7 @@ export function BookingStrip({ variant = "hero" }: { variant?: "hero" | "inline"
               id="strip-payment"
               value={paymentMode}
               onChange={(e) => setPaymentMode(e.target.value)}
-              className={`${inputClasses} cursor-pointer`}
+              className={selectClasses}
             >
               <option value="">Any Method</option>
               <option value="online">Online (UPI / Card)</option>

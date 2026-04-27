@@ -23,7 +23,7 @@ export default function PolicyPage() {
           <h1 className="text-display-md text-white mb-4">
             Rental Policy & Terms
           </h1>
-          <p className="font-body-lg text-white/70 max-w-lg mx-auto">
+          <p className="font-body-lg text-white/70 max-w-[32rem] mx-auto">
             Clear rules for a smooth rental experience. No hidden charges, no surprises.
           </p>
         </div>
@@ -63,7 +63,7 @@ export default function PolicyPage() {
 
       {/* Help */}
       <Section variant="sand">
-        <div className="text-center max-w-lg mx-auto">
+        <div className="text-center max-w-[32rem] mx-auto">
           <h2 className="font-headline-lg text-primary mb-4">
             Need Clarification?
           </h2>

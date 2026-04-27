@@ -29,7 +29,7 @@ export default function BookPage() {
           <h1 className="text-display-md text-white mb-4">
             Complete Your Booking
           </h1>
-          <p className="font-body-lg text-white/70 max-w-lg mx-auto">
+          <p className="font-body-lg text-white/70 max-w-[32rem] mx-auto">
             Simple process. Free delivery. Secure online payment.
           </p>
         </div>

@@ -42,7 +42,7 @@ export default function Home() {
               </h1>
 
               {/* Subheadline */}
-              <p className="font-body-lg text-white/70 max-w-xl mb-12">
+              <p className="font-body-lg text-white/70 max-w-[36rem] mb-12">
                 Experience the freedom of the open road with our premium self-drive fleet. 
                 Free delivery across Punjab &amp; Haryana, starting from &#8377;2,200/day.
               </p>
@@ -161,7 +161,7 @@ export default function Home() {
             </div>
 
             {/* Floating Card */}
-            <div className="relative z-10 w-full max-w-md bg-white rounded-xl shadow-elevated p-8 md:p-10">
+            <div className="relative z-10 w-full max-w-[28rem] bg-white rounded-xl shadow-elevated p-8 md:p-10">
               <div className="flex items-center gap-3 mb-6">
                 <span className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                 <span className="text-xs font-bold uppercase tracking-widest text-secondary">

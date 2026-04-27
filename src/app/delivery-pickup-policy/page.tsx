@@ -14,7 +14,7 @@ export default function DeliveryPickupPage() {
         <div className="py-14 md:py-24 text-center">
           <span className="font-label-bold uppercase tracking-widest text-secondary-fixed mb-3 block">Policy</span>
           <h1 className="text-display-md text-white mb-4">Delivery &amp; Pickup Policy</h1>
-          <p className="font-body-lg text-white/70 max-w-lg mx-auto">
+          <p className="font-body-lg text-white/70 max-w-[32rem] mx-auto">
             How vehicle delivery and return works with {siteConfig.brand}.
           </p>
         </div>
