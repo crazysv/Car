@@ -31,7 +31,7 @@ export const siteConfig = {
   nav: [
     { label: "Home", href: "/" },
     { label: "Fleet", href: "/fleet" },
-    { label: "Why Us", href: "/#why-us" },
+    { label: "Policies", href: "/policy" },
     { label: "FAQ", href: "/faq" },
     { label: "Contact", href: "/contact" },
   ],
