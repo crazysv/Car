@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
+import Script from "next/script";
 import { siteConfig } from "@/data/site-config";
 import { Section, SectionHeader } from "@/components/section";
 import { BookingForm } from "@/components/booking-form";
@@ -14,6 +15,11 @@ export const metadata: Metadata = {
 export default function BookPage() {
   return (
     <>
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        strategy="afterInteractive"
+      />
+
       {/* Page Header */}
       <Section variant="dark" className="!py-0">
         <div className="py-14 md:py-24 text-center">

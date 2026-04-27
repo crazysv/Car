@@ -37,6 +37,14 @@ export interface BookingResult {
   error?: string;
 }
 
+interface StoredBooking extends BookingPayload {
+  bookingRef: string;
+  status: BookingStatus;
+  createdAt: string;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
+}
+
 /* ------------------------------------------------------------------ */
 /*  Payload Builder                                                    */
 /* ------------------------------------------------------------------ */
@@ -88,6 +96,73 @@ export function generateBookingRef(): string {
   return `JP-${ts.slice(-4)}${rand}`;
 }
 
+function readLocalBookings(): StoredBooking[] {
+  if (typeof window === "undefined") {
+    return [];
+  }
+
+  try {
+    const stored = localStorage.getItem("jp_bookings");
+    return stored ? (JSON.parse(stored) as StoredBooking[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeLocalBookings(bookings: StoredBooking[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    localStorage.setItem("jp_bookings", JSON.stringify(bookings));
+  } catch {
+    // Ignore local persistence errors in environments without storage
+  }
+}
+
+export function persistBookingLocally(
+  payload: BookingPayload,
+  bookingRef: string,
+  status: BookingStatus,
+  paymentMeta?: { razorpayOrderId?: string; razorpayPaymentId?: string }
+) {
+  const bookings = readLocalBookings();
+  const next = bookings.filter((item) => item.bookingRef !== bookingRef);
+
+  next.push({
+    ...payload,
+    bookingRef,
+    status,
+    createdAt: new Date().toISOString(),
+    razorpayOrderId: paymentMeta?.razorpayOrderId,
+    razorpayPaymentId: paymentMeta?.razorpayPaymentId,
+  });
+
+  writeLocalBookings(next);
+}
+
+export function updateBookingStatusLocally(
+  bookingRef: string,
+  status: BookingStatus,
+  paymentMeta?: { razorpayOrderId?: string; razorpayPaymentId?: string }
+) {
+  const bookings = readLocalBookings();
+  const next = bookings.map((item) =>
+    item.bookingRef === bookingRef
+      ? {
+          ...item,
+          status,
+          razorpayOrderId: paymentMeta?.razorpayOrderId ?? item.razorpayOrderId,
+          razorpayPaymentId:
+            paymentMeta?.razorpayPaymentId ?? item.razorpayPaymentId,
+        }
+      : item
+  );
+
+  writeLocalBookings(next);
+}
+
 /* ------------------------------------------------------------------ */
 /*  Submission Service                                                 */
 /* ------------------------------------------------------------------ */
@@ -105,29 +180,15 @@ export async function submitBooking(
   payload: BookingPayload
 ): Promise<BookingResult> {
   const ref = generateBookingRef();
+  const status: BookingStatus =
+    payload.paymentMode === "online"
+      ? "pending_payment"
+      : "pending_confirmation";
 
-  // --- Persist locally until real backend exists ---
-  try {
-    const stored = JSON.parse(localStorage.getItem("jp_bookings") || "[]");
-    stored.push({
-      ...payload,
-      bookingRef: ref,
-      status: payload.paymentMode === "online" ? "pending_payment" : "pending_confirmation",
-      createdAt: new Date().toISOString(),
-    });
-    localStorage.setItem("jp_bookings", JSON.stringify(stored));
-  } catch {
-    // localStorage may not be available in all contexts
-  }
+  persistBookingLocally(payload, ref, status);
 
   // --- Simulate network latency (remove when real API is connected) ---
   await new Promise((r) => setTimeout(r, 1200));
-
-  // --- Determine initial status based on payment mode ---
-  const status: BookingStatus =
-    payload.paymentMode === "online"
-      ? "pending_payment"       // Advance payment still required
-      : "pending_confirmation"; // Offline: team will call to confirm
 
   return {
     success: true,
@@ -156,6 +217,7 @@ export interface RazorpayOrderResult {
   orderId: string;       // Razorpay order_id
   amount: number;
   currency: string;
+  bookingRef: string;
 }
 
 /**
@@ -163,16 +225,36 @@ export interface RazorpayOrderResult {
  * Will call POST /api/booking/create-order when backend is ready.
  */
 export async function createPaymentOrder(
-  _params: RazorpayOrderParams
+  params: RazorpayOrderParams
 ): Promise<RazorpayOrderResult> {
-  // TODO: Replace with actual API call
-  // const res = await fetch("/api/booking/create-order", {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify(params),
-  // });
-  // return res.json();
-  throw new Error("Payment integration not yet configured. Please use offline payment or contact us directly.");
+  const res = await fetch("/api/create-order", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      amount: params.amount,
+      currency: "INR",
+      receipt: params.bookingRef,
+      bookingRef: params.bookingRef,
+      customerName: params.customerName,
+      customerPhone: params.customerPhone,
+      description: params.description,
+    }),
+  });
+
+  const data = (await res.json()) as
+    | { order_id?: string; amount?: number; currency?: string; bookingRef?: string; error?: string }
+    | undefined;
+
+  if (!res.ok || !data?.order_id || !data.amount || !data.currency) {
+    throw new Error(data?.error || "Unable to create payment order");
+  }
+
+  return {
+    orderId: data.order_id,
+    amount: data.amount,
+    currency: data.currency,
+    bookingRef: data.bookingRef || params.bookingRef,
+  };
 }
 
 /**
@@ -180,11 +262,27 @@ export async function createPaymentOrder(
  * Will call POST /api/booking/verify-payment when backend is ready.
  */
 export async function verifyPayment(
-  _bookingRef: string,
-  _razorpayPaymentId: string,
-  _razorpayOrderId: string,
-  _razorpaySignature: string
+  bookingRef: string,
+  razorpayPaymentId: string,
+  razorpayOrderId: string,
+  razorpaySignature: string
 ): Promise<BookingResult> {
-  // TODO: Replace with actual API call
-  throw new Error("Payment verification not yet configured.");
+  const res = await fetch("/api/verify-payment", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      bookingRef,
+      razorpay_payment_id: razorpayPaymentId,
+      razorpay_order_id: razorpayOrderId,
+      razorpay_signature: razorpaySignature,
+    }),
+  });
+
+  const data = (await res.json()) as BookingResult;
+
+  if (!res.ok || !data.success) {
+    throw new Error(data.error || "Payment verification failed");
+  }
+
+  return data;
 }
