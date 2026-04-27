@@ -1,26 +1,253 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* JP Rentals Design System (Stitch) */
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* Typography */
+  --font-sans: var(--font-manrope);
+  --font-display: var(--font-manrope);
+
+  /* Colors */
+  --color-surface: #f8f9fa;
+  --color-primary: #000a1e;
+  --color-on-background: #191c1d;
+  --color-on-error-container: #93000a;
+  --color-surface-variant: #e1e3e4;
+  --color-on-tertiary-fixed: #1b1c1c;
+  --color-on-surface-variant: #44474e;
+  --color-inverse-primary: #aec7f6;
+  --color-tertiary: #0a0a0a;
+  --color-error-container: #ffdad6;
+  --color-on-error: #ffffff;
+  --color-on-primary-fixed-variant: #2d476f;
+  --color-secondary-fixed-dim: #e9c176;
+  --color-on-secondary-fixed: #261900;
+  --color-surface-container-low: #f3f4f5;
+  --color-secondary-fixed: #ffdea5;
+  --color-primary-fixed-dim: #aec7f6;
+  --color-surface-dim: #d9dadb;
+  --color-on-primary: #ffffff;
+  --color-background: #f8f9fa;
+  --color-surface-container-high: #e7e8e9;
+  --color-on-secondary: #ffffff;
+  --color-surface-container-highest: #e1e3e4;
+  --color-surface-container: #edeeef;
+  --color-surface-tint: #465f88;
+  --color-tertiary-fixed-dim: #c8c6c6;
+  --color-outline: #74777f;
+  --color-on-secondary-fixed-variant: #5d4201;
+  --color-on-tertiary: #ffffff;
+  --color-on-surface: #191c1d;
+  --color-error: #ba1a1a;
+  --color-on-tertiary-container: #898888;
+  --color-on-primary-fixed: #001b3d;
+  --color-secondary: #775a19;
+  --color-outline-variant: #c4c6cf;
+  --color-on-tertiary-fixed-variant: #474747;
+  --color-secondary-container: #fed488;
+  --color-inverse-surface: #2e3132;
+  --color-surface-bright: #f8f9fa;
+  --color-on-primary-container: #708ab5;
+  --color-on-secondary-container: #785a1a;
+  --color-inverse-on-surface: #f0f1f2;
+  --color-surface-container-lowest: #ffffff;
+  --color-tertiary-fixed: #e4e2e1;
+  --color-tertiary-container: #212121;
+  --color-primary-fixed: #d6e3ff;
+  --color-primary-container: #002147;
+
+  /* Font Families */
+  --font-label-sm: var(--font-manrope);
+  --font-label-bold: var(--font-manrope);
+  --font-headline-md: var(--font-manrope);
+  --font-body-md: var(--font-manrope);
+  --font-display-xl: var(--font-manrope);
+  --font-body-lg: var(--font-manrope);
+  --font-headline-lg: var(--font-manrope);
+
+  /* Spacing overrides for Stitch specific components if needed, using tailwindv4 scale */
+  --spacing-xs: 4px;
+  --spacing-sm: 12px;
+  --spacing-base: 8px;
+  --spacing-md: 24px;
+  --spacing-lg: 48px;
+  --spacing-xl: 80px;
+  --spacing-gutter: 24px;
+  --spacing-container-max: 1280px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@utility font-label-sm {
+  font-family: var(--font-manrope);
+  font-size: 11px;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  font-weight: 500;
+}
+@utility font-label-bold {
+  font-family: var(--font-manrope);
+  font-size: 12px;
+  line-height: 1.2;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+}
+@utility font-body-sm {
+  font-family: var(--font-manrope);
+  font-size: 14px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+@utility font-body-md {
+  font-family: var(--font-manrope);
+  font-size: 16px;
+  line-height: 1.5;
+  font-weight: 400;
+}
+@utility font-body-lg {
+  font-family: var(--font-manrope);
+  font-size: 18px;
+  line-height: 1.6;
+  font-weight: 400;
+}
+@utility font-headline-sm {
+  font-family: var(--font-manrope);
+  font-size: 24px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+@utility font-headline-md {
+  font-family: var(--font-manrope);
+  font-size: 28px;
+  line-height: 1.3;
+  font-weight: 600;
+}
+@utility font-headline-lg {
+  font-family: var(--font-manrope);
+  font-size: 32px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+@utility text-display-sm {
+  font-family: var(--font-manrope);
+  font-size: 40px;
+  line-height: 1.15;
+  font-weight: 700;
+}
+@utility text-display-md {
+  font-family: var(--font-manrope);
+  font-size: 48px;
+  line-height: 1.15;
+  font-weight: 800;
+}
+@utility text-display-lg {
+  font-family: var(--font-manrope);
+  font-size: 56px;
+  line-height: 1.1;
+  font-weight: 800;
+}
+@utility text-display-xl {
+  font-family: var(--font-manrope);
+  font-size: 64px;
+  line-height: 1.1;
+  font-weight: 900;
+}
+
+/* Base Styles */
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), system-ui, sans-serif;
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Material Symbols Default Config */
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  display: inline-block;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  -webkit-font-feature-settings: 'liga';
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Premium Shadows */
+
+.shadow-card {
+  box-shadow: 0 4px 20px -4px rgba(0, 33, 71, 0.05);
+}
+
+.shadow-card-hover {
+  box-shadow: 0 8px 30px -4px rgba(0, 33, 71, 0.1);
+}
+
+.shadow-elevated {
+  box-shadow: 0 12px 40px -8px rgba(0, 33, 71, 0.15);
+}
+
+/* Animations */
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 500px; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out forwards;
+}
+
+/* Utility Classes */
+
+.section-padding {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .section-padding {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .section-padding {
+    padding-left: 5rem;
+    padding-right: 5rem;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-surface-container);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-secondary);
 }
