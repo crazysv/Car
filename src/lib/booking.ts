@@ -23,26 +23,25 @@ export interface BookingPayload {
   securityDeposit: number;
 }
 
+/**
+ * Frontend booking statuses — aligned with the database booking_status enum.
+ * Every value here matches a real DB value so there is no mismatch
+ * between what the API stores and what the UI displays.
+ */
 export type BookingStatus =
-  | "pending_confirmation"   // Request received, waiting for team review
-  | "pending_payment"        // Confirmed by team, advance payment required
-  | "payment_initiated"      // Razorpay order created, awaiting completion
-  | "confirmed"              // Payment received, booking confirmed
-  | "cancelled";
+  | "pending_payment"   // Booking created, no payment yet (online or offline)
+  | "advance_paid"      // Advance payment received and verified
+  | "confirmed"         // Fully confirmed by team
+  | "active"            // Rental currently in progress
+  | "completed"         // Rental finished
+  | "cancelled";        // Booking cancelled
 
 export interface BookingResult {
   success: boolean;
   bookingRef: string;
+  bookingId?: string;
   status: BookingStatus;
   error?: string;
-}
-
-interface StoredBooking extends BookingPayload {
-  bookingRef: string;
-  status: BookingStatus;
-  createdAt: string;
-  razorpayOrderId?: string;
-  razorpayPaymentId?: string;
 }
 
 /* ------------------------------------------------------------------ */
@@ -96,133 +95,74 @@ export function generateBookingRef(): string {
   return `JP-${ts.slice(-4)}${rand}`;
 }
 
-function readLocalBookings(): StoredBooking[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  try {
-    const stored = localStorage.getItem("jp_bookings");
-    return stored ? (JSON.parse(stored) as StoredBooking[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeLocalBookings(bookings: StoredBooking[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  try {
-    localStorage.setItem("jp_bookings", JSON.stringify(bookings));
-  } catch {
-    // Ignore local persistence errors in environments without storage
-  }
-}
-
-export function persistBookingLocally(
-  payload: BookingPayload,
-  bookingRef: string,
-  status: BookingStatus,
-  paymentMeta?: { razorpayOrderId?: string; razorpayPaymentId?: string }
-) {
-  const bookings = readLocalBookings();
-  const next = bookings.filter((item) => item.bookingRef !== bookingRef);
-
-  next.push({
-    ...payload,
-    bookingRef,
-    status,
-    createdAt: new Date().toISOString(),
-    razorpayOrderId: paymentMeta?.razorpayOrderId,
-    razorpayPaymentId: paymentMeta?.razorpayPaymentId,
-  });
-
-  writeLocalBookings(next);
-}
-
-export function updateBookingStatusLocally(
-  bookingRef: string,
-  status: BookingStatus,
-  paymentMeta?: { razorpayOrderId?: string; razorpayPaymentId?: string }
-) {
-  const bookings = readLocalBookings();
-  const next = bookings.map((item) =>
-    item.bookingRef === bookingRef
-      ? {
-          ...item,
-          status,
-          razorpayOrderId: paymentMeta?.razorpayOrderId ?? item.razorpayOrderId,
-          razorpayPaymentId:
-            paymentMeta?.razorpayPaymentId ?? item.razorpayPaymentId,
-        }
-      : item
-  );
-
-  writeLocalBookings(next);
-}
-
 /* ------------------------------------------------------------------ */
-/*  Submission Service                                                 */
-/* ------------------------------------------------------------------ */
-/*  This is the single integration point for booking submission.       */
-/*  Today it stores to localStorage and returns a pending status.      */
-/*  Tomorrow it calls a real API endpoint.                             */
-/*                                                                     */
-/*  For online payments, the flow will be:                             */
-/*    1. submitBooking() -> creates order, returns pending_payment     */
-/*    2. initiatePayment() -> opens Razorpay checkout                  */
-/*    3. confirmPayment() -> verifies with server, returns confirmed   */
+/*  Submission Service — Supabase-backed                               */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Creates a booking in Supabase via the server-side API.
+ * Requires the user to be authenticated (session cookie).
+ * Returns the DB-accurate status: always "pending_payment".
+ */
 export async function submitBooking(
   payload: BookingPayload
 ): Promise<BookingResult> {
-  const ref = generateBookingRef();
-  const status: BookingStatus =
-    payload.paymentMode === "online"
-      ? "pending_payment"
-      : "pending_confirmation";
+  const res = await fetch("/api/bookings/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      vehicleSlug: payload.vehicleSlug,
+      pickupDate: payload.pickupDate,
+      returnDate: payload.returnDate,
+      pickupLocation: payload.location,
+      paymentMode: payload.paymentMode,
+      customerName: payload.fullName,
+      customerPhone: payload.phone,
+      notes: payload.message || undefined,
+    }),
+  });
 
-  persistBookingLocally(payload, ref, status);
+  const data = await res.json();
 
-  // --- Simulate network latency (remove when real API is connected) ---
-  await new Promise((r) => setTimeout(r, 1200));
+  if (!res.ok || !data.success) {
+    return {
+      success: false,
+      bookingRef: data.bookingRef || "",
+      status: "pending_payment",
+      error: data.error || "Failed to create booking",
+    };
+  }
 
+  // Both online and offline bookings start as pending_payment in the DB.
+  // The UI distinguishes between them using paymentMode context, not status.
   return {
     success: true,
-    bookingRef: ref,
-    status,
+    bookingRef: data.bookingRef,
+    bookingId: data.bookingId,
+    status: "pending_payment",
   };
 }
 
 /* ------------------------------------------------------------------ */
-/*  Razorpay Integration Point                                         */
-/* ------------------------------------------------------------------ */
-/*  These stubs define the exact interface that will be implemented     */
-/*  when Razorpay keys are available. No UI changes will be needed.    */
+/*  Razorpay Integration                                               */
 /* ------------------------------------------------------------------ */
 
 export interface RazorpayOrderParams {
-  bookingRef: string;
-  amount: number;        // In paise (INR * 100)
-  customerName: string;
-  customerPhone: string;
-  customerEmail?: string;
-  description: string;
+  bookingId: string;
+  customerName?: string;
+  customerPhone?: string;
 }
 
 export interface RazorpayOrderResult {
   orderId: string;       // Razorpay order_id
-  amount: number;
+  amount: number;        // In paise
   currency: string;
   bookingRef: string;
 }
 
 /**
  * Creates a Razorpay order for the advance payment.
- * Will call POST /api/booking/create-order when backend is ready.
+ * Amount is derived server-side from the booking record — never trusted from client.
  */
 export async function createPaymentOrder(
   params: RazorpayOrderParams
@@ -231,13 +171,9 @@ export async function createPaymentOrder(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      amount: params.amount,
-      currency: "INR",
-      receipt: params.bookingRef,
-      bookingRef: params.bookingRef,
+      bookingId: params.bookingId,
       customerName: params.customerName,
       customerPhone: params.customerPhone,
-      description: params.description,
     }),
   });
 
@@ -253,16 +189,17 @@ export async function createPaymentOrder(
     orderId: data.order_id,
     amount: data.amount,
     currency: data.currency,
-    bookingRef: data.bookingRef || params.bookingRef,
+    bookingRef: data.bookingRef || "",
   };
 }
 
 /**
  * Verifies payment completion after Razorpay callback.
- * Will call POST /api/booking/verify-payment when backend is ready.
+ * Server authenticates user, verifies booking ownership,
+ * confirms payment record linkage, and returns DB-accurate status.
  */
 export async function verifyPayment(
-  bookingRef: string,
+  bookingId: string,
   razorpayPaymentId: string,
   razorpayOrderId: string,
   razorpaySignature: string
@@ -271,7 +208,7 @@ export async function verifyPayment(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      bookingRef,
+      bookingId,
       razorpay_payment_id: razorpayPaymentId,
       razorpay_order_id: razorpayOrderId,
       razorpay_signature: razorpaySignature,

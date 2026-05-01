@@ -46,13 +46,13 @@ export default async function VehicleDetailPage(
       <div className="bg-surface-container-low border-b border-outline-variant">
         <div className="max-w-container-max mx-auto section-padding py-4">
           <nav className="font-body-sm text-outline font-semibold">
-            <a href="/" className="hover:text-primary transition-colors">
+            <Link href="/" className="hover:text-primary transition-colors">
               Home
-            </a>
+            </Link>
             <span className="mx-2">/</span>
-            <a href="/fleet" className="hover:text-primary transition-colors">
+            <Link href="/fleet" className="hover:text-primary transition-colors">
               Fleet
-            </a>
+            </Link>
             <span className="mx-2">/</span>
             <span className="text-primary font-bold">
               {vehicle.name} {vehicle.year}

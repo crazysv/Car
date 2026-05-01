@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { fleet, getVehicleBySlug } from "@/data/fleet";
@@ -9,10 +9,7 @@ import type { Vehicle } from "@/data/fleet";
 import {
   buildBookingPayload,
   createPaymentOrder,
-  generateBookingRef,
-  persistBookingLocally,
   submitBooking,
-  updateBookingStatusLocally,
   verifyPayment,
   type BookingResult,
   type BookingStatus,
@@ -36,61 +33,7 @@ interface BookingFormData {
 type FormErrors = Partial<Record<keyof BookingFormData, string>>;
 type SubmitState = "idle" | "submitting" | "submitted" | "error";
 
-interface RazorpaySuccessResponse {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-}
-
-interface RazorpayFailureResponse {
-  error?: {
-    code?: string;
-    description?: string;
-    source?: string;
-    step?: string;
-    reason?: string;
-    metadata?: {
-      order_id?: string;
-      payment_id?: string;
-    };
-  };
-}
-
-interface RazorpayCheckoutOptions {
-  key: string;
-  amount: number;
-  currency: string;
-  name: string;
-  description: string;
-  order_id: string;
-  prefill?: {
-    name?: string;
-    contact?: string;
-  };
-  notes?: Record<string, string>;
-  theme?: {
-    color?: string;
-  };
-  modal?: {
-    ondismiss?: () => void;
-  };
-  handler: (response: RazorpaySuccessResponse) => void;
-}
-
-interface RazorpayInstance {
-  open: () => void;
-  on: (event: "payment.failed", handler: (response: RazorpayFailureResponse) => void) => void;
-}
-
-interface RazorpayConstructor {
-  new (options: RazorpayCheckoutOptions): RazorpayInstance;
-}
-
-declare global {
-  interface Window {
-    Razorpay?: RazorpayConstructor;
-  }
-}
+import { getPublicRazorpayKey, formatPaymentError, openRazorpayCheckout } from "@/lib/razorpay-client";
 
 const emptyForm: BookingFormData = {
   fullName: "",
@@ -120,49 +63,7 @@ function todayISO() {
   return new Date().toISOString().split("T")[0];
 }
 
-function getPublicRazorpayKey() {
-  const key = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
-  if (!key) {
-    throw new Error("Razorpay public key is not configured.");
-  }
-  return key;
-}
 
-function formatPaymentError(error: unknown): string {
-  if (error instanceof Error && error.message) {
-    return error.message;
-  }
-  return "Something went wrong while processing the payment. Please try again.";
-}
-
-function openRazorpayCheckout(options: RazorpayCheckoutOptions) {
-  return new Promise<RazorpaySuccessResponse>((resolve, reject) => {
-    if (typeof window === "undefined" || !window.Razorpay) {
-      reject(new Error("Razorpay checkout is not available yet. Please refresh and try again."));
-      return;
-    }
-
-    const checkout = new window.Razorpay({
-      ...options,
-      handler: (response) => resolve(response),
-      modal: {
-        ondismiss: () => reject(new Error("Payment was cancelled before completion.")),
-      },
-    });
-
-    checkout.on("payment.failed", (response) => {
-      reject(
-        new Error(
-          response.error?.description ||
-            response.error?.reason ||
-            "Payment failed. Please try again."
-        )
-      );
-    });
-
-    checkout.open();
-  });
-}
 
 function validate(d: BookingFormData): FormErrors {
   const e: FormErrors = {};
@@ -186,30 +87,25 @@ function validate(d: BookingFormData): FormErrors {
 
 export function BookingForm() {
   const searchParams = useSearchParams();
-  const [form, setForm] = useState<BookingFormData>(emptyForm);
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [touched, setTouched] = useState<Set<string>>(new Set());
-  const [submitState, setSubmitState] = useState<SubmitState>("idle");
-  const [result, setResult] = useState<BookingResult | null>(null);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-
-  /* Pre-fill from search params: ?car=...&pickup=...&return=...&payment=... */
-  useEffect(() => {
-    const updates: Partial<BookingFormData> = {};
+  const [form, setForm] = useState<BookingFormData>(() => {
+    const initialState = { ...emptyForm };
     const car = searchParams.get("car");
     const pickup = searchParams.get("pickup");
     const ret = searchParams.get("return");
     const payment = searchParams.get("payment");
 
-    if (car && getVehicleBySlug(car)) updates.preferredCar = car;
-    if (pickup) updates.pickupDate = pickup;
-    if (ret) updates.returnDate = ret;
-    if (payment && ["online", "offline"].includes(payment)) updates.paymentMode = payment;
+    if (car && getVehicleBySlug(car)) initialState.preferredCar = car;
+    if (pickup) initialState.pickupDate = pickup;
+    if (ret) initialState.returnDate = ret;
+    if (payment && ["online", "offline"].includes(payment)) initialState.paymentMode = payment;
 
-    if (Object.keys(updates).length > 0) {
-      setForm((prev) => ({ ...prev, ...updates }));
-    }
-  }, [searchParams]);
+    return initialState;
+  });
+  const [errors, setErrors] = useState<FormErrors>({});
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+  const [submitState, setSubmitState] = useState<SubmitState>("idle");
+  const [result, setResult] = useState<BookingResult | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const selectedVehicle: Vehicle | undefined = useMemo(
     () => (form.preferredCar ? getVehicleBySlug(form.preferredCar) : undefined),
@@ -264,31 +160,25 @@ export function BookingForm() {
     try {
       const payload = buildBookingPayload(form, selectedVehicle, days);
 
-      /* ---- Offline path: submit booking request only ---- */
+      // Both paths create a real booking in Supabase first
+      const bookingResult = await submitBooking(payload);
+
+      if (!bookingResult.success) {
+        throw new Error(bookingResult.error || "Unable to create booking");
+      }
+
+      /* ---- Offline path: booking created, done ---- */
       if (payload.paymentMode === "offline") {
-        const bookingResult = await submitBooking(payload);
-
-        if (bookingResult.success) {
-          setResult(bookingResult);
-          setSubmitState("submitted");
-          return;
-        }
-
-        throw new Error(bookingResult.error || "Unable to submit booking request");
+        setResult(bookingResult);
+        setSubmitState("submitted");
+        return;
       }
 
       /* ---- Online path: create order → Razorpay checkout → verify ---- */
-      const bookingRef = generateBookingRef();
       const order = await createPaymentOrder({
-        bookingRef,
-        amount: Math.max(payload.advanceAmount * 100, 100),
+        bookingId: bookingResult.bookingId!,
         customerName: payload.fullName,
         customerPhone: payload.phone,
-        description: `${payload.vehicleName} advance payment`,
-      });
-
-      persistBookingLocally(payload, bookingRef, "payment_initiated", {
-        razorpayOrderId: order.orderId,
       });
 
       const payment = await openRazorpayCheckout({
@@ -309,26 +199,19 @@ export function BookingForm() {
         theme: {
           color: "#A77C43",
         },
-        handler: () => {
-          // Replaced by Promise resolution in openRazorpayCheckout
-        },
       });
 
       const verification = await verifyPayment(
-        order.bookingRef,
+        bookingResult.bookingId!,
         payment.razorpay_payment_id,
         payment.razorpay_order_id,
         payment.razorpay_signature
       );
 
-      updateBookingStatusLocally(order.bookingRef, verification.status, {
-        razorpayOrderId: payment.razorpay_order_id,
-        razorpayPaymentId: payment.razorpay_payment_id,
-      });
-
       setResult(verification);
       setSubmitState("submitted");
     } catch (error) {
+      console.warn("Booking/Payment incomplete:", error instanceof Error ? error.message : String(error));
       setSubmitError(formatPaymentError(error));
       setSubmitState("error");
     }
@@ -473,7 +356,7 @@ function PostSubmissionView({
   advanceAmount: number;
 }) {
   const isOnline = form.paymentMode === "online";
-  const isPaymentConfirmed = result.status === "confirmed";
+  const isPaymentConfirmed = result.status === "advance_paid";
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
@@ -602,24 +485,29 @@ function PostSubmissionView({
 
 function statusHeadline(status: BookingStatus): string {
   switch (status) {
-    case "pending_confirmation": return "Booking Request Received";
-    case "pending_payment":     return "Advance Payment Required";
-    case "payment_initiated":   return "Payment in Progress";
-    case "confirmed":           return "Booking Confirmed";
-    case "cancelled":           return "Booking Cancelled";
+    case "pending_payment": return "Booking Request Received";
+    case "advance_paid":    return "Advance Payment Received";
+    case "confirmed":       return "Booking Confirmed";
+    case "active":          return "Rental Active";
+    case "completed":       return "Rental Completed";
+    case "cancelled":       return "Booking Cancelled";
   }
 }
 
 function statusDescription(status: BookingStatus, isOnline: boolean): string {
   switch (status) {
-    case "pending_confirmation":
-      return "Your request has been submitted. Our team will contact you shortly to confirm availability and finalise your booking.";
     case "pending_payment":
-      return `Your booking details have been received. A ${siteConfig.booking.advancePercent}% advance payment is required to confirm your reservation. Please complete the payment to secure the vehicle.`;
-    case "payment_initiated":
-      return "Your payment is being processed. Please do not close this page.";
+      return isOnline
+        ? `Your booking has been created. A ${siteConfig.booking.advancePercent}% advance payment is required to confirm your reservation.`
+        : "Your booking request has been submitted. Our team will contact you shortly to confirm availability and finalise your booking.";
+    case "advance_paid":
+      return `Your ${siteConfig.booking.advancePercent}% advance payment has been received successfully. Your vehicle is reserved and our team will contact you before delivery.`;
     case "confirmed":
-      return "Your booking is confirmed and your vehicle is reserved. We will contact you before delivery.";
+      return "Your booking is fully confirmed and your vehicle is reserved. We will contact you before delivery.";
+    case "active":
+      return "Your rental is currently active. Drive safe!";
+    case "completed":
+      return "Your rental has been completed. Thank you for choosing JP Rentals.";
     case "cancelled":
       return "This booking has been cancelled.";
   }
@@ -627,11 +515,12 @@ function statusDescription(status: BookingStatus, isOnline: boolean): string {
 
 function StatusBadge({ status }: { status: BookingStatus }) {
   const config: Record<BookingStatus, { label: string; icon: string; color: string }> = {
-    pending_confirmation: { label: "Pending Confirmation", icon: "hourglass_top", color: "bg-blue-100 text-blue-800" },
-    pending_payment:      { label: "Advance Payment Required", icon: "payment", color: "bg-amber-100 text-amber-800" },
-    payment_initiated:    { label: "Payment in Progress", icon: "sync", color: "bg-amber-100 text-amber-800" },
-    confirmed:            { label: "Confirmed", icon: "verified", color: "bg-green-100 text-green-800" },
-    cancelled:            { label: "Cancelled", icon: "cancel", color: "bg-red-100 text-red-800" },
+    pending_payment: { label: "Pending",      icon: "hourglass_top",  color: "bg-amber-100 text-amber-800" },
+    advance_paid:    { label: "Advance Paid", icon: "verified",       color: "bg-green-100 text-green-800" },
+    confirmed:       { label: "Confirmed",    icon: "verified",       color: "bg-green-100 text-green-800" },
+    active:          { label: "Active",       icon: "directions_car", color: "bg-blue-100 text-blue-800" },
+    completed:       { label: "Completed",    icon: "check_circle",   color: "bg-green-100 text-green-800" },
+    cancelled:       { label: "Cancelled",    icon: "cancel",         color: "bg-red-100 text-red-800" },
   };
   const c = config[status];
   return (

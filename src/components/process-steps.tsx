@@ -41,7 +41,7 @@ export function ProcessSteps() {
         {/* Horizontal connector line for desktop */}
         <div className="hidden md:block absolute top-8 left-[12.5%] w-[75%] h-[2px] bg-outline-variant" />
 
-        {steps.map((step, i) => (
+        {steps.map((step) => (
           <div key={step.number} className="relative z-10 flex flex-col items-center text-center group">
             {/* Step Icon Container */}
             <div className="w-16 h-16 bg-white border-2 border-outline-variant rounded-full flex items-center justify-center text-primary mb-6 shadow-sm group-hover:border-primary group-hover:text-primary-container transition-colors duration-300">
