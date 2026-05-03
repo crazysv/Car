@@ -68,6 +68,23 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate customer contact fields (mirrors frontend rules)
+    if (customerName.length < 2 || customerName.length > 100) {
+      return NextResponse.json(
+        { error: "Customer name must be between 2 and 100 characters" },
+        { status: 400 }
+      );
+    }
+
+    // Indian mobile: starts with 6-9, exactly 10 digits (whitespace already stripped by .trim())
+    const phoneDigits = customerPhone.replace(/\s/g, "");
+    if (!/^[6-9]\d{9}$/.test(phoneDigits)) {
+      return NextResponse.json(
+        { error: "Enter a valid 10-digit Indian mobile number" },
+        { status: 400 }
+      );
+    }
+
     // 3. Look up the vehicle by slug (server-side validation)
     const admin = createAdminClient();
 

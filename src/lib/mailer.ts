@@ -4,6 +4,7 @@ const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
 
 const FROM_EMAIL = process.env.BOOKING_FROM_EMAIL || 'notifications@jprentals.in';
 const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@jprentals.in';
+const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://jp-rentals.com').replace(/\/$/, '');
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -17,6 +18,19 @@ function formatDate(dateStr: string | Date) {
   return new Date(dateStr).toLocaleDateString('en-IN', {
     dateStyle: 'medium',
   });
+}
+
+/**
+ * Escape customer-controlled values before interpolation into HTML email templates.
+ * Prevents markup injection via names, phone numbers, locations, etc.
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 /**
@@ -81,20 +95,20 @@ export async function sendNewBookingAdminEmail(params: {
   
   try {
     const html = wrapHtml(
-      `New Booking: ${params.bookingRef}`,
+      `New Booking: ${escapeHtml(params.bookingRef)}`,
       `
       <p>A new booking has been placed.</p>
       <table>
-        <tr><th>Booking Ref</th><td>${params.bookingRef}</td></tr>
-        <tr><th>Customer Name</th><td>${params.customerName}</td></tr>
-        <tr><th>Customer Phone</th><td>${params.customerPhone}</td></tr>
-        <tr><th>Customer Email</th><td>${params.customerEmail}</td></tr>
-        <tr><th>Vehicle</th><td>${params.vehicleName}</td></tr>
+        <tr><th>Booking Ref</th><td>${escapeHtml(params.bookingRef)}</td></tr>
+        <tr><th>Customer Name</th><td>${escapeHtml(params.customerName)}</td></tr>
+        <tr><th>Customer Phone</th><td>${escapeHtml(params.customerPhone)}</td></tr>
+        <tr><th>Customer Email</th><td>${escapeHtml(params.customerEmail)}</td></tr>
+        <tr><th>Vehicle</th><td>${escapeHtml(params.vehicleName)}</td></tr>
         <tr><th>Dates</th><td>${formatDate(params.pickupDate)} to ${formatDate(params.returnDate)}</td></tr>
-        <tr><th>Location</th><td>${params.pickupLocation}</td></tr>
-        <tr><th>Payment Mode</th><td>${params.paymentMode}</td></tr>
-        <tr><th>Booking Status</th><td>${params.bookingStatus}</td></tr>
-        <tr><th>Payment Status</th><td>${params.paymentStatus}</td></tr>
+        <tr><th>Location</th><td>${escapeHtml(params.pickupLocation)}</td></tr>
+        <tr><th>Payment Mode</th><td>${escapeHtml(params.paymentMode)}</td></tr>
+        <tr><th>Booking Status</th><td>${escapeHtml(params.bookingStatus)}</td></tr>
+        <tr><th>Payment Status</th><td>${escapeHtml(params.paymentStatus)}</td></tr>
       </table>
       <p>Log in to the admin dashboard for full details.</p>
       `
@@ -132,14 +146,14 @@ export async function sendBookingConfirmationEmail(params: {
     const html = wrapHtml(
       `Booking Confirmed`,
       `
-      <p>Hi ${params.customerName},</p>
+      <p>Hi ${escapeHtml(params.customerName)},</p>
       <p>Your booking request with JP Rentals has been received.</p>
       
       <table>
-        <tr><th>Booking Reference</th><td><strong>${params.bookingRef}</strong></td></tr>
-        <tr><th>Vehicle</th><td>${params.vehicleName}</td></tr>
+        <tr><th>Booking Reference</th><td><strong>${escapeHtml(params.bookingRef)}</strong></td></tr>
+        <tr><th>Vehicle</th><td>${escapeHtml(params.vehicleName)}</td></tr>
         <tr><th>Dates</th><td>${formatDate(params.pickupDate)} to ${formatDate(params.returnDate)}</td></tr>
-        <tr><th>Pickup Location</th><td>${params.pickupLocation}</td></tr>
+        <tr><th>Pickup Location</th><td>${escapeHtml(params.pickupLocation)}</td></tr>
         <tr><th>Payment Mode</th><td>${params.paymentMode === 'online' ? 'Online' : 'Offline'}</td></tr>
         <tr><th>Rental Total</th><td>${formatCurrency(params.rentalTotal)}</td></tr>
         <tr><th>Advance Amount</th><td>${formatCurrency(params.advanceAmount)}</td></tr>
@@ -149,7 +163,7 @@ export async function sendBookingConfirmationEmail(params: {
       ${isOnlineUnpaid ? '<p>Please note: If you selected online payment, you need to complete the advance payment to fully confirm your booking.</p>' : ''}
       
       <p style="text-align: center;">
-        <a href="https://jp-rentals.com/my-bookings" class="btn">View My Bookings</a>
+        <a href="${SITE_URL}/my-bookings" class="btn">View My Bookings</a>
       </p>
       `
     );
@@ -178,12 +192,12 @@ export async function sendPaymentSuccessEmail(params: {
     const html = wrapHtml(
       `Payment Received`,
       `
-      <p>Hi ${params.customerName},</p>
-      <p>We have successfully received your payment of <strong>${formatCurrency(params.amount)}</strong> for booking <strong>${params.bookingRef}</strong>.</p>
-      <p>Your booking status is currently: <strong>${params.bookingStatus}</strong>.</p>
+      <p>Hi ${escapeHtml(params.customerName)},</p>
+      <p>We have successfully received your payment of <strong>${formatCurrency(params.amount)}</strong> for booking <strong>${escapeHtml(params.bookingRef)}</strong>.</p>
+      <p>Your booking status is currently: <strong>${escapeHtml(params.bookingStatus)}</strong>.</p>
       <p>Our team will process your booking and reach out shortly if further details are needed.</p>
       <p style="text-align: center;">
-        <a href="https://jp-rentals.com/my-bookings" class="btn">View My Bookings</a>
+        <a href="${SITE_URL}/my-bookings" class="btn">View My Bookings</a>
       </p>
       `
     );
@@ -213,16 +227,16 @@ export async function sendCancellationRequestAdminEmail(params: {
 
   try {
     const html = wrapHtml(
-      `Cancellation Request: ${params.bookingRef}`,
+      `Cancellation Request: ${escapeHtml(params.bookingRef)}`,
       `
       <p>A customer has requested to cancel their booking.</p>
       <table>
-        <tr><th>Booking Ref</th><td>${params.bookingRef}</td></tr>
-        <tr><th>Customer Name</th><td>${params.customerName}</td></tr>
-        <tr><th>Customer Contact</th><td>${params.customerPhone} | ${params.customerEmail}</td></tr>
-        <tr><th>Vehicle</th><td>${params.vehicleName}</td></tr>
+        <tr><th>Booking Ref</th><td>${escapeHtml(params.bookingRef)}</td></tr>
+        <tr><th>Customer Name</th><td>${escapeHtml(params.customerName)}</td></tr>
+        <tr><th>Customer Contact</th><td>${escapeHtml(params.customerPhone)} | ${escapeHtml(params.customerEmail)}</td></tr>
+        <tr><th>Vehicle</th><td>${escapeHtml(params.vehicleName)}</td></tr>
         <tr><th>Dates</th><td>${formatDate(params.pickupDate)} to ${formatDate(params.returnDate)}</td></tr>
-        <tr><th>Current Status</th><td>${params.currentStatus}</td></tr>
+        <tr><th>Current Status</th><td>${escapeHtml(params.currentStatus)}</td></tr>
       </table>
       <p>Please review and process the cancellation in the admin dashboard.</p>
       `

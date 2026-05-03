@@ -188,6 +188,7 @@ export async function POST(request: Request) {
       );
     }
 
+    // Update the payment record — this is critical for reconciliation
     const { error: paymentUpdateError } = await admin
       .from("booking_payments")
       .update({
@@ -198,25 +199,80 @@ export async function POST(request: Request) {
       .eq("id", paymentRecord.id);
 
     if (paymentUpdateError) {
-      console.error("Failed to update payment record:", paymentUpdateError);
-      // Booking is updated, payment record update failed — log but don't fail
-      // since the booking status is the source of truth for the user
+      console.error("CRITICAL: Payment record update failed after booking update:", paymentUpdateError);
+      // Attempt to rollback booking status since payment record is inconsistent
+      const { error: rollbackError } = await admin
+        .from("bookings")
+        .update({
+          booking_status: booking.booking_status,
+          payment_status: booking.payment_status,
+        })
+        .eq("id", booking.id);
+
+      if (rollbackError) {
+        console.error("CRITICAL: Booking rollback also failed. State is inconsistent:", rollbackError);
+        return jsonResult(
+          {
+            success: false,
+            bookingRef: booking.booking_ref,
+            status: "pending_payment",
+            error: "Payment verified but system state is inconsistent. Please contact support immediately.",
+          },
+          500
+        );
+      }
+
+      return jsonResult(
+        {
+          success: false,
+          bookingRef: booking.booking_ref,
+          status: "pending_payment",
+          error: "Payment was verified but could not be fully recorded. Please try again or contact support.",
+        },
+        500
+      );
     }
 
-    // Log status transition
-    await admin.from("booking_status_history").insert({
+    // Log status transition — non-critical but important for audit
+    const { error: historyError } = await admin.from("booking_status_history").insert({
       booking_id: booking.id,
       status: "advance_paid",
       note: `Advance payment verified. Razorpay Payment: ${paymentId}`,
       changed_by: user.id,
     });
 
-    // Send success email
+    if (historyError) {
+      // Payment and booking are both correctly updated, but audit trail is incomplete.
+      // Return success (payment IS real) but flag the audit gap so it can be investigated.
+      console.error("WARNING: Payment verified and recorded, but audit log insert failed:", historyError);
+
+      // Send success email even though audit failed — the payment is real
+      sendPaymentSuccessEmail({
+        toEmail: booking.customer_email || user.email!,
+        customerName: booking.customer_name || user.email!.split("@")[0],
+        bookingRef: booking.booking_ref,
+        amount: paymentRecord.amount,
+        bookingStatus: "advance_paid",
+      }).catch(err => console.error("Payment success email failed:", err));
+
+      return jsonResult(
+        {
+          success: true,
+          bookingRef: booking.booking_ref,
+          bookingId: booking.id,
+          status: "advance_paid",
+          error: "Payment recorded successfully, but audit log could not be written. Our team has been notified.",
+        },
+        200
+      );
+    }
+
+    // Send success email (fire-and-forget, does not affect response)
     sendPaymentSuccessEmail({
       toEmail: booking.customer_email || user.email!,
       customerName: booking.customer_name || user.email!.split("@")[0],
       bookingRef: booking.booking_ref,
-      amount: paymentRecord.amount / 100, // convert paise to rupees
+      amount: paymentRecord.amount, // already in rupees (stored as rupees in DB)
       bookingStatus: "advance_paid",
     }).catch(err => console.error("Payment success email failed:", err));
 
