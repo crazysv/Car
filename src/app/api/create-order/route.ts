@@ -167,6 +167,17 @@ export async function POST(request: Request) {
 
     if (bookingUpdateError) {
       console.error("Failed to update booking payment status:", bookingUpdateError);
+
+      // Rollback: mark the payment row as failed so it doesn't linger as an active order
+      const { error: rollbackError } = await admin
+        .from("booking_payments")
+        .update({ status: "verification_failed" })
+        .eq("razorpay_order_id", order.id);
+
+      if (rollbackError) {
+        console.error("CRITICAL: Could not rollback orphaned payment row:", rollbackError);
+      }
+
       return NextResponse.json(
         { error: "Failed to update booking state. Please try again." },
         { status: 500 }

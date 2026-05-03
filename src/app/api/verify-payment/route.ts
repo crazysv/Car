@@ -135,7 +135,9 @@ export async function POST(request: Request) {
 
     if (!isValid) {
       // Signature invalid — update records to reflect failure
-      await admin
+      const persistenceErrors: string[] = [];
+
+      const { error: paymentFailErr } = await admin
         .from("booking_payments")
         .update({
           razorpay_payment_id: paymentId,
@@ -143,23 +145,42 @@ export async function POST(request: Request) {
         })
         .eq("id", paymentRecord.id);
 
-      await admin
+      if (paymentFailErr) {
+        console.error("Failed to mark payment as verification_failed:", paymentFailErr);
+        persistenceErrors.push("payment record");
+      }
+
+      const { error: bookingFailErr } = await admin
         .from("bookings")
         .update({ payment_status: "verification_failed" })
         .eq("id", booking.id);
 
-      await admin.from("booking_status_history").insert({
+      if (bookingFailErr) {
+        console.error("Failed to update booking payment_status to verification_failed:", bookingFailErr);
+        persistenceErrors.push("booking status");
+      }
+
+      const { error: historyFailErr } = await admin.from("booking_status_history").insert({
         booking_id: booking.id,
         status: "pending_payment",
         note: `Payment signature verification failed. Order: ${orderId}`,
       });
+
+      if (historyFailErr) {
+        console.error("Failed to log verification failure in history:", historyFailErr);
+        persistenceErrors.push("audit log");
+      }
+
+      const errorMsg = persistenceErrors.length > 0
+        ? `Payment signature verification failed. Warning: could not fully record failure state (${persistenceErrors.join(", ")}). Please contact support.`
+        : "Payment signature verification failed";
 
       return jsonResult(
         {
           success: false,
           bookingRef: booking.booking_ref,
           status: "pending_payment",
-          error: "Payment signature verification failed",
+          error: errorMsg,
         },
         400
       );
