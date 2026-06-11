@@ -7,6 +7,7 @@ export const siteConfig = {
   phoneFormatted: "+91 70277 05618",
   phoneHref: "tel:+917027705618",
   whatsappHref: "https://wa.me/917027705618",
+  instagramHref: "https://instagram.com/jprentals",
   email: "contact@jprentals.com",
   location: {
     name: "Modern Valley, Kharar",

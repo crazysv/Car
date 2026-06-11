@@ -3,6 +3,8 @@ import { Manrope } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/navbar";
 import { Footer } from "@/components/footer";
+import { WhatsappFab } from "@/components/whatsapp-fab";
+import { MobileBookingBar } from "@/components/mobile-booking-bar";
 
 const manrope = Manrope({
   variable: "--font-manrope",
@@ -25,6 +27,13 @@ export const metadata: Metadata = {
     "Haryana",
     "JP Rentals",
     "premium car rental",
+    "car rental Kharar",
+    "self drive Punjab",
+    "car rental Chandigarh",
+    "car rental Mohali",
+    "car rental Panchkula",
+    "rental car Tricity",
+    "self drive Haryana",
   ],
   openGraph: {
     title: "JP Rentals - Premium Self-Drive Car Rental",
@@ -32,7 +41,27 @@ export const metadata: Metadata = {
       "Premium self-drive car rental in Kharar, Punjab & Haryana. Free delivery, online payment, curated fleet.",
     siteName: "JP Rentals",
     type: "website",
+    locale: "en_IN",
+    url: "https://www.jprentals.com",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "JP Rentals - Premium Self-Drive Car Rental in Kharar, Punjab",
+      },
+    ],
   },
+  twitter: {
+    card: "summary_large_image",
+    title: "JP Rentals - Premium Self-Drive Car Rental",
+    description:
+      "Premium self-drive car rental in Kharar, Punjab & Haryana. Free delivery, online payment, curated fleet.",
+    images: ["/og-image.jpg"],
+  },
+  robots: { index: true, follow: true },
+  alternates: { canonical: "https://www.jprentals.com" },
+  icons: { icon: "/favicon.ico", shortcut: "/favicon.ico" },
 };
 
 export default function RootLayout({
@@ -50,8 +79,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col bg-surface text-on-surface font-body-md">
         <Navbar />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <main className="flex-1 pb-[68px] lg:pb-0">{children}</main>
+        <div className="pb-[68px] lg:pb-0">
+          <Footer />
+        </div>
+        <MobileBookingBar />
+        <WhatsappFab />
       </body>
     </html>
   );
