@@ -26,7 +26,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Diesel",
     category: "SUV",
     pricePerDay: 5500,
-    image: "/cars/thar-roxx-4x4-diesel-2025.jpg",
+    image: "/cars/thar-roxx-4x4-diesel-2025.png",
     featured: true,
     description:
       "The ultimate off-road machine. The 2025 Thar Roxx 4x4 delivers raw power with refined interiors, perfect for adventurous road trips across Punjab and beyond.",
@@ -46,7 +46,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Diesel",
     category: "SUV",
     pricePerDay: 5000,
-    image: "/cars/scorpio-2023-diesel.jpg",
+    image: "/cars/scorpio-2023-diesel.png",
     featured: true,
     description:
       "A commanding presence on any road. The 2023 Scorpio combines muscular styling with a powerful diesel engine, ideal for family trips and highway cruising.",
@@ -66,7 +66,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Diesel",
     category: "SUV",
     pricePerDay: 5000,
-    image: "/cars/thar-4x4-2022-diesel.jpg",
+    image: "/cars/thar-4x4-2022-diesel.png",
     featured: true,
     description:
       "The iconic Thar with full 4x4 capability. Built for those who love off-road adventures while enjoying modern creature comforts.",
@@ -86,7 +86,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Diesel",
     category: "SUV",
     pricePerDay: 4500,
-    image: "/cars/thar-4x2-2024-diesel.jpg",
+    image: "/cars/thar-4x2-2024-diesel.png",
     featured: false,
     description:
       "All the Thar attitude in a more accessible package. The 4x2 variant offers stylish looks and a comfortable ride for city and highway use.",
@@ -106,7 +106,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Petrol",
     category: "Sedan",
     pricePerDay: 3500,
-    image: "/cars/honda-city-2025-petrol-ivtec.jpg",
+    image: "/cars/honda-city-2025-petrol-ivtec.png",
     featured: true,
     description:
       "The gold standard of premium sedans. The 2025 Honda City i-VTEC delivers refined driving dynamics, premium interiors, and exceptional fuel efficiency.",
@@ -126,7 +126,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Diesel",
     category: "Sedan",
     pricePerDay: 3300,
-    image: "/cars/verna-2020-diesel.jpg",
+    image: "/cars/verna-2020-diesel.png",
     featured: false,
     description:
       "A feature-rich sedan that combines elegance with performance. The Verna diesel offers a composed highway ride and impressive fuel economy.",
@@ -146,7 +146,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Petrol",
     category: "SUV",
     pricePerDay: 3200,
-    image: "/cars/brezza-2017-vxi.jpg",
+    image: "/cars/brezza-2017-vxi.png",
     featured: false,
     description:
       "India's favourite compact SUV. The Brezza VXI offers the perfect balance of practicality, safety, and style for everyday driving.",
@@ -166,7 +166,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Petrol",
     category: "Sedan",
     pricePerDay: 3000,
-    image: "/cars/ciaz-alpha-2021-petrol.jpg",
+    image: "/cars/ciaz-alpha-2021-petrol.png",
     featured: false,
     description:
       "Spacious, comfortable, and refined. The Ciaz Alpha is the ideal sedan for long-distance travel with its roomy cabin and smooth ride quality.",
@@ -186,7 +186,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Petrol",
     category: "SUV",
     pricePerDay: 3000,
-    image: "/cars/venue-2021-petrol.jpg",
+    image: "/cars/venue-2021-petrol.png",
     featured: false,
     description:
       "A smart, connected SUV for the urban driver. The Venue packs premium features into a compact footprint, perfect for city and short trips.",
@@ -206,7 +206,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Petrol",
     category: "Sedan",
     pricePerDay: 2700,
-    image: "/cars/ciaz-delta-2016-petrol.jpg",
+    image: "/cars/ciaz-delta-2016-petrol.png",
     featured: false,
     description:
       "A reliable sedan with excellent space and comfort. The Ciaz Delta offers a smooth driving experience and great value for daily rentals.",
@@ -226,7 +226,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Petrol",
     category: "Hatchback",
     pricePerDay: 2700,
-    image: "/cars/i20-sportz-2021-petrol.jpg",
+    image: "/cars/i20-sportz-2021-petrol.png",
     featured: false,
     description:
       "Premium hatchback with sporty styling. The i20 Sportz offers a fun driving experience with its refined engine and feature-rich cabin.",
@@ -246,7 +246,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Diesel",
     category: "Hatchback",
     pricePerDay: 2200,
-    image: "/cars/baleno-delta-2018-diesel.jpg",
+    image: "/cars/baleno-delta-2018-diesel.png",
     featured: false,
     description:
       "A practical hatchback with excellent fuel economy. The Baleno Delta diesel is perfect for budget-conscious travellers who don't want to compromise on comfort.",
@@ -266,7 +266,7 @@ export const fleet: Vehicle[] = [
     fuelType: "Petrol",
     category: "Hatchback",
     pricePerDay: 2200,
-    image: "/cars/baleno-zeta-2019-petrol.jpg",
+    image: "/cars/baleno-zeta-2019-petrol.png",
     featured: false,
     description:
       "A well-rounded premium hatchback. The Baleno Zeta petrol delivers a smooth city driving experience with modern features and good fuel economy.",

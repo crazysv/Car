@@ -9,7 +9,6 @@ import { ProcessSteps } from "@/components/process-steps";
 import { TrustGrid } from "@/components/trust-grid";
 import { AccordionGroup } from "@/components/accordion";
 import { Button } from "@/components/button";
-import { Testimonials } from "@/components/testimonials";
 
 export default function Home() {
   const featured = getFeaturedVehicles();
@@ -217,15 +216,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TESTIMONIALS */}
-      <Section variant="default">
-        <SectionHeader
-          label="Customer Reviews"
-          title="What Our Customers Say"
-          description="Real experiences from people who have driven with JP Rentals."
-        />
-        <Testimonials />
-      </Section>
 
       {/* FAQ PREVIEW */}
       <Section variant="sand">

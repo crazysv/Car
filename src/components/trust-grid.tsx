@@ -61,13 +61,11 @@ export function TrustGrid() {
 
       {/* Right: Image */}
       <div className="relative h-[600px] rounded-2xl overflow-hidden shadow-elevated">
-        <div className="absolute inset-0 bg-primary-container" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1),transparent_70%)]" />
-        <div className="absolute inset-0 flex items-center justify-center opacity-20">
-          <span className="material-symbols-outlined text-[120px] text-white">
-            car_rental
-          </span>
-        </div>
+        <img
+          src="/trust-handover.png"
+          alt="Customer receiving car keys at doorstep"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
         
         {/* Floating Card */}
         <div className="absolute bottom-8 left-8 right-8 bg-white p-6 rounded-xl shadow-card backdrop-blur-sm bg-white/95">
