@@ -12,7 +12,10 @@ const manrope = Manrope({
   display: "swap",
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://car-ruby-mu.vercel.app";
+
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: {
     default: "JP Rentals - Premium Self-Drive Car Rental in Kharar",
     template: "%s | JP Rentals",
@@ -42,7 +45,7 @@ export const metadata: Metadata = {
     siteName: "JP Rentals",
     type: "website",
     locale: "en_IN",
-    url: "https://www.jprentals.com",
+    url: siteUrl,
     images: [
       {
         url: "/og-image.jpg",
@@ -60,7 +63,7 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"],
   },
   robots: { index: true, follow: true },
-  alternates: { canonical: "https://www.jprentals.com" },
+  alternates: { canonical: siteUrl },
   icons: { icon: "/favicon.ico", shortcut: "/favicon.ico" },
 };
 
@@ -75,6 +78,20 @@ export default function RootLayout({
         <link
           href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
           rel="stylesheet"
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "AutoRental",
+              "name": "JP Rentals",
+              "url": siteUrl,
+              "telephone": "+917027705618",
+              "areaServed": ["Kharar", "Punjab", "Haryana"],
+              "image": `${siteUrl}/og-image.jpg`
+            }),
+          }}
         />
       </head>
       <body className="min-h-full flex flex-col bg-surface text-on-surface font-body-md">

@@ -1,10 +1,33 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key');
+export function checkEmailConfiguration() {
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.BOOKING_FROM_EMAIL;
+  const adminEmail = process.env.ADMIN_NOTIFICATION_EMAIL;
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
 
-const FROM_EMAIL = process.env.BOOKING_FROM_EMAIL || 'notifications@jprentals.in';
-const ADMIN_EMAIL = process.env.ADMIN_NOTIFICATION_EMAIL || 'admin@jprentals.in';
-const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || 'https://jp-rentals.com').replace(/\/$/, '');
+  const isConfigured = Boolean(apiKey && fromEmail && adminEmail && siteUrl);
+  return {
+    configured: isConfigured,
+    apiKey: !!apiKey,
+    fromEmail: !!fromEmail,
+    adminEmail: !!adminEmail,
+    siteUrl: !!siteUrl,
+  };
+}
+
+// Lazy init resend so it doesn't crash on import if key is missing
+let resendInstance: Resend | null = null;
+function getResend() {
+  if (!resendInstance && process.env.RESEND_API_KEY) {
+    resendInstance = new Resend(process.env.RESEND_API_KEY);
+  }
+  return resendInstance;
+}
+
+function getSiteUrl() {
+  return (process.env.NEXT_PUBLIC_SITE_URL || '').replace(/\/$/, '');
+}
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat('en-IN', {
@@ -91,7 +114,11 @@ export async function sendNewBookingAdminEmail(params: {
   bookingStatus: string;
   paymentStatus: string;
 }) {
-  if (!process.env.RESEND_API_KEY) return;
+  const config = checkEmailConfiguration();
+  if (!config.configured) {
+    console.log("Skipping admin new booking email: Resend configuration is incomplete.");
+    return;
+  }
   
   try {
     const html = wrapHtml(
@@ -114,9 +141,12 @@ export async function sendNewBookingAdminEmail(params: {
       `
     );
 
+    const resend = getResend();
+    if (!resend) return;
+
     await resend.emails.send({
-      from: `JP Rentals <${FROM_EMAIL}>`,
-      to: ADMIN_EMAIL,
+      from: `JP Rentals <${process.env.BOOKING_FROM_EMAIL}>`,
+      to: process.env.ADMIN_NOTIFICATION_EMAIL!,
       subject: `[JP Rentals] New Booking: ${params.bookingRef}`,
       html,
     });
@@ -138,10 +168,15 @@ export async function sendBookingConfirmationEmail(params: {
   advanceAmount: number;
   securityDeposit: number;
 }) {
-  if (!process.env.RESEND_API_KEY) return;
+  const config = checkEmailConfiguration();
+  if (!config.configured) {
+    console.log("Skipping customer confirmation email: Resend configuration is incomplete.");
+    return;
+  }
 
   try {
     const isOnlineUnpaid = params.paymentMode === 'online'; // Assuming they haven't paid yet at initial booking
+    const siteUrl = getSiteUrl();
 
     const html = wrapHtml(
       `Booking Confirmed`,
@@ -163,13 +198,16 @@ export async function sendBookingConfirmationEmail(params: {
       ${isOnlineUnpaid ? '<p>Please note: If you selected online payment, you need to complete the advance payment to fully confirm your booking.</p>' : ''}
       
       <p style="text-align: center;">
-        <a href="${SITE_URL}/my-bookings" class="btn">View My Bookings</a>
+        <a href="${siteUrl}/my-bookings" class="btn">View My Bookings</a>
       </p>
       `
     );
 
+    const resend = getResend();
+    if (!resend) return;
+
     await resend.emails.send({
-      from: `JP Rentals <${FROM_EMAIL}>`,
+      from: `JP Rentals <${process.env.BOOKING_FROM_EMAIL}>`,
       to: params.toEmail,
       subject: `Your JP Rentals Booking: ${params.bookingRef}`,
       html,
@@ -186,9 +224,14 @@ export async function sendPaymentSuccessEmail(params: {
   amount: number;
   bookingStatus: string;
 }) {
-  if (!process.env.RESEND_API_KEY) return;
+  const config = checkEmailConfiguration();
+  if (!config.configured) {
+    console.log("Skipping payment success email: Resend configuration is incomplete.");
+    return;
+  }
 
   try {
+    const siteUrl = getSiteUrl();
     const html = wrapHtml(
       `Payment Received`,
       `
@@ -197,13 +240,16 @@ export async function sendPaymentSuccessEmail(params: {
       <p>Your booking status is currently: <strong>${escapeHtml(params.bookingStatus)}</strong>.</p>
       <p>Our team will process your booking and reach out shortly if further details are needed.</p>
       <p style="text-align: center;">
-        <a href="${SITE_URL}/my-bookings" class="btn">View My Bookings</a>
+        <a href="${siteUrl}/my-bookings" class="btn">View My Bookings</a>
       </p>
       `
     );
 
+    const resend = getResend();
+    if (!resend) return;
+
     await resend.emails.send({
-      from: `JP Rentals <${FROM_EMAIL}>`,
+      from: `JP Rentals <${process.env.BOOKING_FROM_EMAIL}>`,
       to: params.toEmail,
       subject: `Payment Success: ${params.bookingRef}`,
       html,
@@ -223,7 +269,11 @@ export async function sendCancellationRequestAdminEmail(params: {
   returnDate: string;
   currentStatus: string;
 }) {
-  if (!process.env.RESEND_API_KEY) return;
+  const config = checkEmailConfiguration();
+  if (!config.configured) {
+    console.log("Skipping admin cancellation request email: Resend configuration is incomplete.");
+    return;
+  }
 
   try {
     const html = wrapHtml(
@@ -242,9 +292,12 @@ export async function sendCancellationRequestAdminEmail(params: {
       `
     );
 
+    const resend = getResend();
+    if (!resend) return;
+
     await resend.emails.send({
-      from: `JP Rentals <${FROM_EMAIL}>`,
-      to: ADMIN_EMAIL,
+      from: `JP Rentals <${process.env.BOOKING_FROM_EMAIL}>`,
+      to: process.env.ADMIN_NOTIFICATION_EMAIL!,
       subject: `[JP Rentals] Cancellation Request: ${params.bookingRef}`,
       html,
     });

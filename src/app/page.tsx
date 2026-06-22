@@ -7,8 +7,15 @@ import { VehicleCard } from "@/components/vehicle-card";
 import { BookingStrip } from "@/components/booking-strip";
 import { ProcessSteps } from "@/components/process-steps";
 import { TrustGrid } from "@/components/trust-grid";
+import { TrustBadges } from "@/components/trust-badges";
 import { AccordionGroup } from "@/components/accordion";
 import { Button } from "@/components/button";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "JP Rentals - Premium Self-Drive Cars in Kharar, Punjab",
+  description: "Experience the freedom of the open road with our premium self-drive fleet. Free delivery across Punjab & Haryana, starting from \u20B92,200/day.",
+};
 
 export default function Home() {
   const featured = getFeaturedVehicles();
@@ -52,6 +59,10 @@ export default function Home() {
                 <BookingStrip variant="hero" />
               </div>
               
+              <div className="mb-8">
+                <TrustBadges />
+              </div>
+
               <p className="text-xs text-white/50 flex items-center gap-2">
                 Need immediate assistance? 
                 <a href={siteConfig.phoneHref} className="text-secondary-fixed font-bold hover:text-white transition-colors">
@@ -315,3 +326,4 @@ function LocationDetail({
     </div>
   );
 }
+

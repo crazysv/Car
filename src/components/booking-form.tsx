@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { fleet, getVehicleBySlug } from "@/data/fleet";
@@ -14,6 +14,7 @@ import {
   type BookingResult,
   type BookingStatus,
 } from "@/lib/booking";
+import { BookingExpectations } from "./booking-expectations";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -32,6 +33,12 @@ interface BookingFormData {
 
 type FormErrors = Partial<Record<keyof BookingFormData, string>>;
 type SubmitState = "idle" | "submitting" | "submitted" | "error";
+type AvailabilityState = "idle" | "loading" | "error" | "loaded";
+
+interface DateRange {
+  pickupDate: string;
+  returnDate: string;
+}
 
 import { getPublicRazorpayKey, formatPaymentError, openRazorpayCheckout } from "@/lib/razorpay-client";
 
@@ -65,7 +72,7 @@ function todayISO() {
 
 
 
-function validate(d: BookingFormData): FormErrors {
+function validate(d: BookingFormData, ranges: DateRange[], avState: AvailabilityState): FormErrors {
   const e: FormErrors = {};
   if (!d.fullName.trim()) e.fullName = "Full name is required";
   if (!d.phone.trim()) e.phone = "Phone number is required";
@@ -78,6 +85,21 @@ function validate(d: BookingFormData): FormErrors {
   if (!d.preferredCar) e.preferredCar = "Please select a vehicle";
   if (!d.location.trim()) e.location = "Delivery location is required";
   if (!d.paymentMode) e.paymentMode = "Please select a payment mode";
+
+  if (avState === "loading" && d.preferredCar) {
+    if (!e.pickupDate) e.pickupDate = "Checking live availability. Please wait a moment.";
+  } else if (avState === "error") {
+    if (!e.pickupDate) e.pickupDate = "Unable to verify availability. Please try again.";
+  } else if (d.pickupDate && d.returnDate && ranges.length > 0) {
+    const isOverlap = ranges.some((blocked) => {
+      return d.pickupDate < blocked.returnDate && d.returnDate > blocked.pickupDate;
+    });
+    if (isOverlap) {
+      if (!e.pickupDate) e.pickupDate = "This vehicle is already reserved for the selected dates.";
+      if (!e.returnDate) e.returnDate = "This vehicle is already reserved for the selected dates.";
+    }
+  }
+
   return e;
 }
 
@@ -107,6 +129,41 @@ export function BookingForm() {
   const [result, setResult] = useState<BookingResult | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const [unavailableRanges, setUnavailableRanges] = useState<DateRange[]>([]);
+  const [avState, setAvState] = useState<AvailabilityState>("idle");
+
+  useEffect(() => {
+    let mounted = true;
+    const selectedSlug = form.preferredCar;
+
+    if (!selectedSlug) return;
+    async function checkAvailability() {
+      try {
+        setAvState("loading");
+        const res = await fetch(`/api/vehicles/${selectedSlug}/availability`);
+        if (!res.ok) throw new Error("Failed to fetch");
+        const data = await res.json();
+        if (mounted && data.ranges) {
+          setUnavailableRanges(data.ranges);
+          setAvState("loaded");
+        }
+      } catch (err) {
+        console.warn("Availability fetch error:", err);
+        if (mounted) {
+          setUnavailableRanges([]);
+          setAvState("error");
+        }
+      }
+    }
+
+    checkAvailability();
+
+    return () => {
+      mounted = false;
+    };
+  }, [form.preferredCar]);
+
+
   const selectedVehicle: Vehicle | undefined = useMemo(
     () => (form.preferredCar ? getVehicleBySlug(form.preferredCar) : undefined),
     [form.preferredCar]
@@ -130,7 +187,7 @@ export function BookingForm() {
     if (touched.has(name)) {
       setErrors((prev) => {
         const next = { ...prev };
-        const check = validate({ ...form, [name]: value });
+        const check = validate({ ...form, [name]: value }, unavailableRanges, avState);
         if (check[name]) next[name] = check[name];
         else delete next[name];
         return next;
@@ -140,7 +197,7 @@ export function BookingForm() {
 
   function onBlur(name: string) {
     setTouched((prev) => new Set(prev).add(name));
-    const check = validate(form);
+    const check = validate(form, unavailableRanges, avState);
     if (check[name as keyof BookingFormData]) {
       setErrors((prev) => ({ ...prev, [name]: check[name as keyof BookingFormData] }));
     }
@@ -148,7 +205,7 @@ export function BookingForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const errs = validate(form);
+    const errs = validate(form, unavailableRanges, avState);
     setErrors(errs);
     setTouched(new Set(Object.keys(form)));
     if (Object.keys(errs).length > 0) return;
@@ -270,6 +327,40 @@ export function BookingForm() {
                 onChange={(v) => onChange("returnDate", v)} onBlur={() => onBlur("returnDate")} required min={form.pickupDate || todayISO()} />
             </div>
 
+            {/* Availability Loading */}
+            {avState === "loading" && (
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-blue-800 font-body-sm flex items-center gap-2">
+                <span className="inline-block w-4 h-4 border-2 border-blue-300 border-t-blue-700 rounded-full animate-spin" />
+                Checking live availability...
+              </div>
+            )}
+
+            {/* Availability Error */}
+            {avState === "error" && (
+              <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-800 font-body-sm flex items-center gap-2">
+                <span className="material-symbols-outlined text-[20px]">error</span>
+                Unable to verify availability. Please try again before booking.
+              </div>
+            )}
+
+            {/* Unavailable Dates Warning */}
+            {unavailableRanges.length > 0 && (
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                <p className="font-body-sm text-orange-800 font-bold mb-2 flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[16px]">info</span>
+                  Some dates are unavailable:
+                </p>
+                <ul className="text-xs text-orange-700 space-y-1 list-disc list-inside ml-1">
+                  {unavailableRanges.map((r, i) => (
+                    <li key={i}>
+                      {new Date(r.pickupDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })} &ndash;{" "}
+                      {new Date(r.returnDate).toLocaleDateString("en-IN", { day: 'numeric', month: 'short' })}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
             <Field label="Preferred Car" name="preferredCar" type="select" value={form.preferredCar} error={errors.preferredCar}
               onChange={(v) => onChange("preferredCar", v)} onBlur={() => onBlur("preferredCar")} required
               placeholder="Select a vehicle" options={vehicleOptions} />
@@ -305,7 +396,7 @@ export function BookingForm() {
             <div className="pt-4">
               <button
                 type="submit"
-                disabled={submitState === "submitting"}
+                disabled={submitState === "submitting" || avState === "loading"}
                 className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 bg-primary-container text-on-primary rounded-lg font-label-bold text-sm tracking-widest uppercase hover:opacity-90 shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 cursor-pointer"
               >
                 {submitState === "submitting" ? (
@@ -328,8 +419,9 @@ export function BookingForm() {
 
       {/* Right: Summary sidebar */}
       <div className="lg:col-span-1">
-        <div className="sticky top-24">
+        <div className="sticky top-24 space-y-6">
           <CostSummaryCard vehicle={selectedVehicle} days={days} rentalTotal={rentalTotal} advanceAmount={advanceAmount} />
+          <BookingExpectations />
         </div>
       </div>
     </div>
@@ -654,3 +746,5 @@ function SummaryLine({ label, value, bold }: { label: string; value: string; bol
     </div>
   );
 }
+
+

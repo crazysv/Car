@@ -65,6 +65,10 @@ export interface Booking {
   booking_status: BookingStatusDb;
   payment_status: PaymentStatusDb;
   notes: string | null;
+  aadhaar_verified: boolean;
+  dl_verified: boolean;
+  docs_verified_at: string | null;
+  docs_verified_by: string | null;
   created_at: string;
   updated_at: string;
 }

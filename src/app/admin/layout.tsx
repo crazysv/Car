@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { isAdminEmail } from "@/lib/admin";
+import { AdminNav } from "./admin-nav";
 
 export default async function AdminLayout({
   children,
@@ -21,5 +22,12 @@ export default async function AdminLayout({
     redirect("/"); // Or perhaps to an unauthorized page, but redirecting to home is standard
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      <div className="pt-20">
+        <AdminNav />
+        {children}
+      </div>
+    </>
+  );
 }

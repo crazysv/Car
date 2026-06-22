@@ -47,6 +47,9 @@ interface AdminBookingRow {
   payment_status: string;
   payment_mode: string;
   created_at: string;
+  customer_name: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
   vehicles: {
     name: string;
     year: number;
@@ -62,9 +65,9 @@ interface AdminBookingRow {
 export default async function AdminBookingsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; vehicle?: string; from?: string; to?: string }>;
 }) {
-  const { q } = await searchParams;
+  const { q, status, vehicle, from, to } = await searchParams;
   const queryText = q?.toLowerCase() || "";
 
   // Use service_role to bypass RLS and fetch all bookings
@@ -86,6 +89,9 @@ export default async function AdminBookingsPage({
       payment_status,
       payment_mode,
       created_at,
+      customer_name,
+      customer_email,
+      customer_phone,
       vehicles (name, year, slug),
       profiles (email, full_name, phone)
     `)
@@ -106,21 +112,47 @@ export default async function AdminBookingsPage({
 
   // Filter in-memory for search query across multiple fields
   const filteredRows = rows.filter((b) => {
-    if (!queryText) return true;
     const vName = b.vehicles?.name?.toLowerCase() || "";
-    const email = b.profiles?.email?.toLowerCase() || "";
-    const phone = b.profiles?.phone?.toLowerCase() || "";
-    const fullName = b.profiles?.full_name?.toLowerCase() || "";
+    const email = (b.customer_email || b.profiles?.email || "").toLowerCase();
+    const phone = (b.customer_phone || b.profiles?.phone || "").toLowerCase();
+    const fullName = (b.customer_name || b.profiles?.full_name || "").toLowerCase();
     const ref = b.booking_ref.toLowerCase();
 
-    return (
-      ref.includes(queryText) ||
-      vName.includes(queryText) ||
-      email.includes(queryText) ||
-      phone.includes(queryText) ||
-      fullName.includes(queryText)
-    );
+    let matches = true;
+
+    if (queryText) {
+      matches = matches && (
+        ref.includes(queryText) ||
+        vName.includes(queryText) ||
+        email.includes(queryText) ||
+        phone.includes(queryText) ||
+        fullName.includes(queryText)
+      );
+    }
+
+    if (status) {
+      matches = matches && b.booking_status === status;
+    }
+
+    if (vehicle) {
+      matches = matches && b.vehicles?.slug === vehicle;
+    }
+
+    if (from && to) {
+      matches = matches && (b.pickup_date < to && b.return_date > from);
+    } else if (from) {
+      matches = matches && b.return_date > from;
+    } else if (to) {
+      matches = matches && b.pickup_date < to;
+    }
+
+    return matches;
   });
+
+  // Extract unique vehicles for filter dropdown
+  const uniqueVehicles = Array.from(
+    new Map(rows.filter(b => b.vehicles).map(b => [b.vehicles.slug, b.vehicles.name + " " + b.vehicles.year])).entries()
+  );
 
   return (
     <>
@@ -138,30 +170,86 @@ export default async function AdminBookingsPage({
 
       <Section variant="default" className="min-h-screen">
         <div className="max-w-7xl mx-auto">
-          {/* Search Form */}
-          <div className="mb-8 flex items-center justify-between">
-            <form className="flex gap-2 w-full max-w-[28rem]" method="GET" action="/admin/bookings">
-              <input
-                type="text"
-                name="q"
-                defaultValue={q}
-                placeholder="Search by ref, email, phone, vehicle..."
-                className="flex-1 bg-surface-container-low border border-outline-variant rounded-full px-4 py-2 font-body-md text-primary placeholder:text-outline focus:outline-none focus:border-secondary transition-colors"
-              />
-              <button
-                type="submit"
-                className="bg-secondary text-primary font-label-bold px-6 py-2 rounded-full hover:bg-secondary-fixed transition-colors"
-              >
-                Search
-              </button>
-              {q && (
-                <Link
-                  href="/admin/bookings"
-                  className="bg-surface-container-high text-primary font-label-bold px-6 py-2 rounded-full hover:bg-surface-container transition-colors"
+          {/* Filters Form */}
+          <div className="mb-8 bg-surface-container-low border border-outline-variant rounded-2xl p-6">
+            <form className="flex flex-wrap gap-4 items-end w-full" method="GET" action="/admin/bookings">
+              
+              <div className="flex-1 min-w-[200px]">
+                <label className="block text-xs font-label-bold text-outline mb-1 uppercase tracking-widest">Search</label>
+                <input
+                  type="text"
+                  name="q"
+                  defaultValue={q}
+                  placeholder="Ref, email, phone..."
+                  className="w-full bg-white border border-outline-variant rounded-xl px-4 py-2 font-body-md text-primary placeholder:text-outline focus:outline-none focus:border-secondary transition-colors"
+                />
+              </div>
+
+              <div className="w-full sm:w-auto min-w-[160px]">
+                <label className="block text-xs font-label-bold text-outline mb-1 uppercase tracking-widest">Status</label>
+                <select 
+                  name="status" 
+                  defaultValue={status || ""}
+                  className="w-full bg-white border border-outline-variant rounded-xl px-4 py-2 font-body-md text-primary focus:outline-none focus:border-secondary transition-colors"
                 >
-                  Clear
-                </Link>
-              )}
+                  <option value="">All Statuses</option>
+                  {Object.entries(bookingStatusConfig).map(([key, conf]) => (
+                    <option key={key} value={key}>{conf.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="w-full sm:w-auto min-w-[180px]">
+                <label className="block text-xs font-label-bold text-outline mb-1 uppercase tracking-widest">Vehicle</label>
+                <select 
+                  name="vehicle" 
+                  defaultValue={vehicle || ""}
+                  className="w-full bg-white border border-outline-variant rounded-xl px-4 py-2 font-body-md text-primary focus:outline-none focus:border-secondary transition-colors"
+                >
+                  <option value="">All Vehicles</option>
+                  {uniqueVehicles.map(([slug, name]) => (
+                    <option key={slug} value={slug}>{name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="w-full sm:w-auto min-w-[140px]">
+                <label className="block text-xs font-label-bold text-outline mb-1 uppercase tracking-widest">From</label>
+                <input
+                  type="date"
+                  name="from"
+                  defaultValue={from}
+                  className="w-full bg-white border border-outline-variant rounded-xl px-4 py-2 font-body-md text-primary focus:outline-none focus:border-secondary transition-colors"
+                />
+              </div>
+
+              <div className="w-full sm:w-auto min-w-[140px]">
+                <label className="block text-xs font-label-bold text-outline mb-1 uppercase tracking-widest">To</label>
+                <input
+                  type="date"
+                  name="to"
+                  defaultValue={to}
+                  className="w-full bg-white border border-outline-variant rounded-xl px-4 py-2 font-body-md text-primary focus:outline-none focus:border-secondary transition-colors"
+                />
+              </div>
+
+              <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
+                <button
+                  type="submit"
+                  className="bg-secondary text-primary font-label-bold px-6 py-2 rounded-xl hover:bg-secondary-fixed transition-colors flex-1"
+                >
+                  Filter
+                </button>
+                {(q || status || vehicle || from || to) && (
+                  <Link
+                    href="/admin/bookings"
+                    className="bg-surface-container-high text-primary font-label-bold px-6 py-2 rounded-xl hover:bg-surface-container transition-colors flex-1 text-center"
+                  >
+                    Clear
+                  </Link>
+                )}
+              </div>
+
             </form>
           </div>
 
@@ -211,15 +299,15 @@ export default async function AdminBookingsPage({
                         <div className="text-sm text-outline font-body-md flex items-center gap-4">
                           <span className="flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[16px]">person</span>
-                            {booking.profiles?.full_name || "Unknown"}
+                            {booking.customer_name || booking.profiles?.full_name || "Unknown"}
                           </span>
                           <span className="flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[16px]">mail</span>
-                            {booking.profiles?.email}
+                            {booking.customer_email || booking.profiles?.email}
                           </span>
                           <span className="flex items-center gap-1.5">
                             <span className="material-symbols-outlined text-[16px]">call</span>
-                            {booking.profiles?.phone || "No phone"}
+                            {booking.customer_phone || booking.profiles?.phone || "No phone"}
                           </span>
                         </div>
                       </div>

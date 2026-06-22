@@ -5,9 +5,9 @@ import { Section } from "@/components/section";
 import { Button } from "@/components/button";
 
 export const metadata: Metadata = {
-  title: "Fleet",
+  title: "Our Fleet - Premium Self-Drive Cars",
   description:
-    "Browse our premium self-drive car rental fleet. SUVs, Sedans, and Hatchbacks available for rent in Kharar, Punjab & Haryana.",
+    "Browse JP Rentals premium self-drive car fleet. SUVs, Sedans, and Hatchbacks available for rent in Kharar, Punjab & Haryana. Book your ride online today.",
 };
 
 export default function FleetPage() {

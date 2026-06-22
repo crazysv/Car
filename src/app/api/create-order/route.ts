@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getRazorpayInstance } from "@/lib/razorpay";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import { expireStaleBookings } from "@/lib/jobs";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -27,7 +29,22 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await request.json()) as CreateOrderRequest;
+    // Rate Limit: 5 requests per 5 minutes (300,000 ms)
+    const rateLimitKey = `create_order_${user.id}`;
+    if (!checkRateLimit(rateLimitKey, 5, 300_000)) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please wait a moment and try again." },
+        { status: 429 }
+      );
+    }
+
+    let body: CreateOrderRequest;
+    try {
+      body = (await request.json()) as CreateOrderRequest;
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    
     const bookingId = body.bookingId?.trim();
 
     if (!bookingId) {
@@ -37,11 +54,22 @@ export async function POST(request: Request) {
       );
     }
 
+    // 1.5 Cleanup stale holds
+    try {
+      await expireStaleBookings();
+    } catch (cleanupError) {
+      console.error("Cleanup error:", cleanupError);
+      return NextResponse.json(
+        { error: "Unable to process payment (cleanup failed). Please try again." },
+        { status: 500 }
+      );
+    }
+
     // 2. Load the booking and verify ownership
     const admin = createAdminClient();
     const { data: booking, error: bookingError } = await admin
       .from("bookings")
-      .select("id, booking_ref, user_id, advance_amount, payment_status, payment_mode")
+      .select("id, booking_ref, user_id, advance_amount, payment_status, payment_mode, vehicle_id, pickup_date, return_date, booking_status")
       .eq("id", bookingId)
       .single();
 
@@ -66,10 +94,45 @@ export async function POST(request: Request) {
       );
     }
 
+    if (booking.booking_status === "cancelled") {
+      return NextResponse.json(
+        { error: "Your payment session has expired. Please create a new booking request." },
+        { status: 400 }
+      );
+    }
+
     if (booking.payment_status === "paid") {
       return NextResponse.json(
         { error: "Payment has already been completed for this booking" },
         { status: 400 }
+      );
+    }
+
+    // 2.5 Server-side availability re-check (Half-open interval logic: [pickupDate, returnDate))
+    // Overlap: existing.pickup_date < requested.return_date AND existing.return_date > requested.pickup_date
+    const blockingStatuses = ["pending_payment", "advance_paid", "confirmed", "active", "cancel_requested"];
+    const { data: overlapping, error: overlapError } = await admin
+      .from("bookings")
+      .select("id")
+      .eq("vehicle_id", booking.vehicle_id)
+      .in("booking_status", blockingStatuses)
+      .lt("pickup_date", booking.return_date)
+      .gt("return_date", booking.pickup_date)
+      .neq("id", booking.id) // Exclude current booking
+      .limit(1);
+
+    if (overlapError) {
+      console.error("Availability check error:", overlapError);
+      return NextResponse.json(
+        { error: "Unable to verify vehicle availability. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    if (overlapping && overlapping.length > 0) {
+      return NextResponse.json(
+        { error: "Vehicle is no longer available for these dates. Someone else may have booked it." },
+        { status: 409 }
       );
     }
 
@@ -191,13 +254,10 @@ export async function POST(request: Request) {
       bookingRef: booking.booking_ref,
     });
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Failed to create Razorpay order";
-
-    if (message.toLowerCase().includes("auth")) {
-      return NextResponse.json({ error: message }, { status: 401 });
-    }
-
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Create order error:", error);
+    return NextResponse.json(
+      { error: "Failed to create payment order. Please try again." },
+      { status: 500 }
+    );
   }
 }

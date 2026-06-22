@@ -7,7 +7,9 @@ import { siteConfig } from "@/data/site-config";
 import { VehicleCard } from "@/components/vehicle-card";
 import { BookingSummaryCard } from "@/components/booking-summary-card";
 import { Section, SectionHeader } from "@/components/section";
+import { TrustBadges } from "@/components/trust-badges";
 import { Button } from "@/components/button";
+import { VehicleAvailability } from "@/components/vehicle-availability";
 
 interface PageProps<T> {
   params: Promise<{ slug: string }>;
@@ -24,9 +26,15 @@ export async function generateMetadata(
   const vehicle = getVehicleBySlug(slug);
   if (!vehicle) return { title: "Vehicle Not Found" };
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://car-ruby-mu.vercel.app";
+  const ogImageUrl = vehicle.image ? `${siteUrl}${vehicle.image}` : `${siteUrl}/og-image.jpg`;
+
   return {
     title: `${vehicle.name} ${vehicle.year} ${vehicle.variant}`,
     description: vehicle.description,
+    openGraph: {
+      images: [{ url: ogImageUrl }],
+    },
   };
 }
 
@@ -40,8 +48,36 @@ export default async function VehicleDetailPage(
 
   const related = getRelatedVehicles(slug, 3);
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://car-ruby-mu.vercel.app";
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": `${vehicle.name} ${vehicle.year} ${vehicle.variant}`,
+    "image": vehicle.image ? `${siteUrl}${vehicle.image}` : undefined,
+    "description": vehicle.description,
+    "category": vehicle.category,
+    "brand": {
+      "@type": "Brand",
+      "name": vehicle.name.split(" ")[0] // simplistic brand extraction
+    },
+    "offers": {
+      "@type": "Offer",
+      "priceCurrency": "INR",
+      "price": vehicle.pricePerDay,
+      "url": `${siteUrl}/fleet/${slug}`,
+      "seller": {
+        "@type": "Organization",
+        "name": "JP Rentals"
+      }
+    }
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Breadcrumb */}
       <div className="bg-surface-container-low border-b border-outline-variant">
         <div className="max-w-container-max mx-auto section-padding py-4">
@@ -104,10 +140,8 @@ export default async function VehicleDetailPage(
             </div>
 
             {/* Badges */}
-            <div className="flex flex-wrap gap-3">
-              <Badge>Free Delivery</Badge>
-              <Badge>Online Payment</Badge>
-              <Badge>{siteConfig.location.region}</Badge>
+            <div className="pt-2">
+              <TrustBadges />
             </div>
 
             {/* Description */}
@@ -170,8 +204,9 @@ export default async function VehicleDetailPage(
 
           {/* Right: Booking Card */}
           <div className="lg:col-span-1">
-            <div className="sticky top-24">
+            <div className="sticky top-24 space-y-6">
               <BookingSummaryCard vehicle={vehicle} />
+              <VehicleAvailability slug={slug} />
             </div>
           </div>
         </div>
@@ -225,13 +260,6 @@ export default async function VehicleDetailPage(
   );
 }
 
-function Badge({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-flex items-center px-4 py-2 text-xs font-bold uppercase tracking-widest text-primary bg-surface border border-outline-variant rounded-md shadow-sm">
-      {children}
-    </span>
-  );
-}
 
 function TermItem({ label, value }: { label: string; value: string }) {
   return (

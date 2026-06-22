@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { isAdminEmail } from "@/lib/admin";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(
   request: Request,
@@ -18,7 +19,22 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    const body = await request.json();
+    // Rate Limit: 30 requests per 5 minutes (300,000 ms)
+    const rateLimitKey = `admin_status_${user.id}`;
+    if (!checkRateLimit(rateLimitKey, 30, 300_000)) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please wait a moment and try again." },
+        { status: 429 }
+      );
+    }
+
+    let body: { targetStatus?: string; note?: string; offlinePaymentConfirmed?: boolean };
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    
     const { targetStatus, note, offlinePaymentConfirmed } = body;
 
     if (!targetStatus) {
@@ -128,6 +144,9 @@ export async function POST(
     return NextResponse.json({ success: true, status: targetStatus });
   } catch (err: unknown) {
     console.error("Admin status route error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to update booking status. Please try again." },
+      { status: 500 }
+    );
   }
 }

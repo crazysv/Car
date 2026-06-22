@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { createClient as createServerClient } from "@/lib/supabase/server";
 import { sendCancellationRequestAdminEmail } from "@/lib/mailer";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   try {
@@ -15,7 +16,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await req.json();
+    // Rate Limit: 3 requests per 5 minutes (300,000 ms)
+    const rateLimitKey = `booking_cancel_${user.id}`;
+    if (!checkRateLimit(rateLimitKey, 3, 300_000)) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please wait a moment and try again." },
+        { status: 429 }
+      );
+    }
+
+    let body: { bookingId?: string };
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+    
     const { bookingId } = body;
 
     if (!bookingId) {
@@ -102,17 +118,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Extract vehicle name from the joined vehicles relation safely
+    const vehicles = booking.vehicles as { name?: string } | { name?: string }[] | null;
+    const vehicleName = Array.isArray(vehicles)
+      ? vehicles[0]?.name || "Unknown Vehicle"
+      : vehicles?.name || "Unknown Vehicle";
+
     // Send cancellation request email to admin
     sendCancellationRequestAdminEmail({
       bookingRef: booking.booking_ref,
       customerName: booking.customer_name || "Unknown",
       customerPhone: booking.customer_phone || "Unknown",
       customerEmail: booking.customer_email || "Unknown",
-      vehicleName: Array.isArray(booking.vehicles) 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        ? (booking.vehicles as any)[0]?.name 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        : ((booking.vehicles as any)?.name || "Unknown Vehicle"),
+      vehicleName,
       pickupDate: booking.pickup_date,
       returnDate: booking.return_date,
       currentStatus: booking.booking_status,

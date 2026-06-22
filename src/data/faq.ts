@@ -15,39 +15,53 @@ export type FAQCategory =
 
 export const faqData: FAQItem[] = [
   {
-    id: "faq-docs-required",
-    question: "What documents are required for booking?",
+    id: "faq-after-booking",
+    question: "What happens after I book?",
     answer:
-      "You need a valid Aadhaar Card and a Driving Licence to rent a car from JP Rentals. Both documents must be original and will be verified at the time of pickup or delivery.",
-    category: "Documents",
-  },
-  {
-    id: "faq-online-payment",
-    question: "Is online payment available?",
-    answer:
-      "Yes, online payment is available from the start. You can pay your booking advance securely online using UPI, net banking, or card payment. We also accept offline payments at the time of pickup.",
-    category: "Payment",
-  },
-  {
-    id: "faq-offline-payment",
-    question: "Can I also pay offline?",
-    answer:
-      "Yes, JP Rentals accepts both online and offline payments. You can choose to pay the advance online and the remaining amount in cash or card at the time of vehicle handover.",
-    category: "Payment",
-  },
-  {
-    id: "faq-advance-amount",
-    question: "How much advance payment is required?",
-    answer:
-      "A 35% advance payment of the total rental amount is required to confirm your booking. The remaining balance can be paid at the time of delivery or pickup.",
+      "Once you pay the 35% advance, your vehicle is reserved. Our team will contact you to confirm the final pickup or free delivery details. The remaining balance is collected at the time of vehicle handover.",
     category: "Booking",
   },
   {
-    id: "faq-security-deposit",
-    question: "Is there any security deposit?",
+    id: "faq-full-amount-online",
+    question: "Do I need to pay the full amount online?",
     answer:
-      "Yes, a refundable security deposit of \u20B95,000 is required at the start of the rental. This deposit is fully refunded after the vehicle is returned in good condition.",
+      "No, you only need to pay a 35% advance online to confirm your booking. The remaining rental amount and the \u20B95,000 security deposit can be paid at the time of delivery or pickup via cash, UPI, or card.",
+    category: "Payment",
+  },
+  {
+    id: "faq-security-deposit",
+    question: "When is the security deposit returned?",
+    answer:
+      "A refundable security deposit of \u20B95,000 is collected at handover. This deposit is fully refunded after you return the vehicle and it passes our standard post-rental inspection.",
     category: "Security Deposit",
+  },
+  {
+    id: "faq-docs-required",
+    question: "What documents are required?",
+    answer:
+      "You must present your original Aadhaar Card and a valid Driving Licence at the time of vehicle handover. Both documents will be verified by our team.",
+    category: "Documents",
+  },
+  {
+    id: "faq-fuel-policy",
+    question: "Is fuel included?",
+    answer:
+      "No, fuel is paid by the customer. The vehicle will be handed over with a certain fuel level, and you should return it with the same level.",
+    category: "Payment",
+  },
+  {
+    id: "faq-payment-fails",
+    question: "What if my online payment fails?",
+    answer:
+      "If your advance payment fails, your booking request will still be saved. You can retry the payment from your 'My Bookings' page or contact our support team for assistance.",
+    category: "Payment",
+  },
+  {
+    id: "faq-cancellation",
+    question: "Can I cancel my booking?",
+    answer:
+      "Yes. Cancellation requests are reviewed by the JP Rentals team. Refund eligibility depends on timing, payment status, and the applicable cancellation policy (typically free within 12 hours of booking).",
+    category: "Cancellation",
   },
   {
     id: "faq-delivery-free",
@@ -55,34 +69,6 @@ export const faqData: FAQItem[] = [
     answer:
       "Yes, JP Rentals offers free delivery within our service area. We bring the car to your preferred location in Kharar and surrounding areas at no additional charge.",
     category: "Delivery & Pickup",
-  },
-  {
-    id: "faq-pickup-available",
-    question: "Is pickup available?",
-    answer:
-      "Yes, vehicle pickup is available. You can either visit our location at Modern Valley, Kharar, or we can arrange pickup from your location within our service area.",
-    category: "Delivery & Pickup",
-  },
-  {
-    id: "faq-service-area",
-    question: "Which areas do you serve?",
-    answer:
-      "JP Rentals is based in Modern Valley, Kharar, and provides self-drive car rental services across Punjab and Haryana. Free delivery is available within our primary service area.",
-    category: "Delivery & Pickup",
-  },
-  {
-    id: "faq-cancellation",
-    question: "What is the cancellation policy?",
-    answer:
-      "Cancellation should be done within 12 hours of booking to receive a full refund of the advance payment. Cancellations after this window may be subject to partial deduction.",
-    category: "Cancellation",
-  },
-  {
-    id: "faq-fuel-policy",
-    question: "Who pays for fuel?",
-    answer:
-      "The fuel cost is paid by the customer. The vehicle is handed over with a certain fuel level, and you are expected to return it with the same level. Any fuel used during the rental period is your responsibility.",
-    category: "Payment",
   },
   {
     id: "faq-contact",
@@ -105,3 +91,4 @@ export const faqCategories: FAQCategory[] = [
   "Cancellation",
   "Security Deposit",
 ];
+

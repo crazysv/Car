@@ -71,6 +71,9 @@ interface BookingDetail {
   customer_phone: string | null;
   customer_email: string | null;
   notes: string | null;
+  aadhaar_verified: boolean;
+  dl_verified: boolean;
+  docs_verified_at: string | null;
   created_at: string;
   vehicles: {
     name: string;
@@ -142,6 +145,9 @@ export default async function BookingDetailPage({
       customer_phone,
       customer_email,
       notes,
+      aadhaar_verified,
+      dl_verified,
+      docs_verified_at,
       created_at,
       vehicles (name, year, slug, category, fuel_type, price_per_day),
       profiles (email, full_name, phone)
@@ -231,6 +237,53 @@ export default async function BookingDetailPage({
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           {/* Left column: details */}
           <div className="lg:col-span-2 space-y-8">
+            {/* Status Banners */}
+            {b.booking_status === "cancel_requested" && (
+              <div className="bg-orange-50 border border-orange-200 text-orange-900 p-6 rounded-2xl flex gap-4 items-start">
+                <span className="material-symbols-outlined text-orange-500 mt-0.5">pending</span>
+                <div>
+                  <h3 className="font-headline-sm mb-1">Cancellation Requested</h3>
+                  <p className="text-sm font-body-md opacity-90">Our team will review your cancellation request and contact you about the next steps.</p>
+                </div>
+              </div>
+            )}
+            {b.booking_status === "cancelled" && b.payment_status === "paid" && (
+              <div className="bg-red-50 border border-red-200 text-red-900 p-6 rounded-2xl flex gap-4 items-start">
+                <span className="material-symbols-outlined text-red-500 mt-0.5">cancel</span>
+                <div>
+                  <h3 className="font-headline-sm mb-1">Cancellation Approved</h3>
+                  <p className="text-sm font-body-md opacity-90">Your booking has been cancelled. Your refund is pending initiation by our team.</p>
+                </div>
+              </div>
+            )}
+            {b.booking_status === "cancelled" && b.payment_status !== "paid" && (
+              <div className="bg-slate-50 border border-slate-200 text-slate-800 p-6 rounded-2xl flex gap-4 items-start">
+                <span className="material-symbols-outlined text-slate-500 mt-0.5">cancel</span>
+                <div>
+                  <h3 className="font-headline-sm mb-1">Booking Cancelled</h3>
+                  <p className="text-sm font-body-md opacity-90">Your booking has been cancelled.</p>
+                </div>
+              </div>
+            )}
+            {b.booking_status === "refund_pending" && (
+              <div className="bg-amber-50 border border-amber-200 text-amber-900 p-6 rounded-2xl flex gap-4 items-start">
+                <span className="material-symbols-outlined text-amber-600 mt-0.5">payments</span>
+                <div>
+                  <h3 className="font-headline-sm mb-1">Refund Pending</h3>
+                  <p className="text-sm font-body-md opacity-90">Your refund is currently being processed manually by our team through our payment provider. It should reflect in your account soon.</p>
+                </div>
+              </div>
+            )}
+            {b.booking_status === "refunded" && (
+              <div className="bg-green-50 border border-green-200 text-green-900 p-6 rounded-2xl flex gap-4 items-start">
+                <span className="material-symbols-outlined text-green-600 mt-0.5">currency_rupee</span>
+                <div>
+                  <h3 className="font-headline-sm mb-1">Refund Processed</h3>
+                  <p className="text-sm font-body-md opacity-90">Your refund has been fully processed successfully.</p>
+                </div>
+              </div>
+            )}
+
             {/* Booking details card */}
             <div className="bg-surface-container-low rounded-2xl border border-outline-variant p-6 md:p-8">
               <h2 className="font-headline-md text-primary mb-6 flex items-center gap-2">
@@ -266,6 +319,58 @@ export default async function BookingDetailPage({
                 <DetailRow label="Phone" value={b.customer_phone || b.profiles.phone || "\u2014"} />
                 <DetailRow label="Email" value={b.customer_email || b.profiles.email || "\u2014"} />
               </div>
+            </div>
+
+            {/* Document Requirements Card */}
+            <div className="bg-surface-container-low rounded-2xl border border-outline-variant p-6 md:p-8">
+              <h2 className="font-headline-md text-primary mb-6 flex items-center gap-2">
+                <span className="material-symbols-outlined text-secondary">badge</span>
+                Document Requirements
+              </h2>
+              {b.aadhaar_verified && b.dl_verified ? (
+                <div className="bg-green-50 border border-green-200 rounded-xl p-5 flex items-start gap-4">
+                  <span className="material-symbols-outlined text-green-600 mt-0.5 text-[24px]">verified_user</span>
+                  <div>
+                    <p className="font-headline-sm text-green-800 mb-1">Documents Verified by JP Rentals</p>
+                    <p className="text-sm text-green-700">
+                      Your Aadhaar Card and Driving Licence have been verified.
+                    </p>
+                    {b.docs_verified_at && (
+                      <p className="text-xs text-green-600 mt-2">
+                        Verified on {formatDateTime(b.docs_verified_at)}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-5 flex items-start gap-4">
+                  <span className="material-symbols-outlined text-amber-600 mt-0.5 text-[24px]">assignment</span>
+                  <div>
+                    <p className="font-headline-sm text-amber-800 mb-1">Documents Required at Handover</p>
+                    <p className="text-sm text-amber-700 mb-3">
+                      Please present your original documents at the time of vehicle pickup or delivery.
+                    </p>
+                    <ul className="space-y-2">
+                      <li className="flex items-center gap-2 text-sm">
+                        {b.aadhaar_verified ? (
+                          <span className="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
+                        ) : (
+                          <span className="material-symbols-outlined text-amber-500 text-[18px]">pending</span>
+                        )}
+                        <span className={b.aadhaar_verified ? "text-green-800 font-bold" : "text-amber-800"}>Aadhaar Card</span>
+                      </li>
+                      <li className="flex items-center gap-2 text-sm">
+                        {b.dl_verified ? (
+                          <span className="material-symbols-outlined text-green-600 text-[18px]">check_circle</span>
+                        ) : (
+                          <span className="material-symbols-outlined text-amber-500 text-[18px]">pending</span>
+                        )}
+                        <span className={b.dl_verified ? "text-green-800 font-bold" : "text-amber-800"}>Driving Licence</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Status history timeline */}

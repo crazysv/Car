@@ -6,6 +6,8 @@ import {
   sendNewBookingAdminEmail,
   sendBookingConfirmationEmail,
 } from "@/lib/mailer";
+import { expireStaleBookings } from "@/lib/jobs";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -35,8 +37,22 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Parse and validate the request body
-    const body = (await request.json()) as CreateBookingRequest;
+    // Rate Limit: 5 requests per 5 minutes (300,000 ms)
+    const rateLimitKey = `booking_create_${user.id}`;
+    if (!checkRateLimit(rateLimitKey, 5, 300_000)) {
+      return NextResponse.json(
+        { error: "Too many attempts. Please wait a moment and try again." },
+        { status: 429 }
+      );
+    }
+
+    // 2. Parse and validate the request body safely
+    let body: CreateBookingRequest;
+    try {
+      body = (await request.json()) as CreateBookingRequest;
+    } catch {
+      return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
 
     const vehicleSlug = body.vehicleSlug?.trim();
     const pickupDate = body.pickupDate?.trim();
@@ -57,6 +73,32 @@ export async function POST(request: Request) {
     ) {
       return NextResponse.json(
         { error: "Missing required booking fields" },
+        { status: 400 }
+      );
+    }
+
+    // Validate dates
+    const pickupMs = new Date(pickupDate).getTime();
+    const returnMs = new Date(returnDate).getTime();
+
+    if (isNaN(pickupMs) || isNaN(returnMs)) {
+      return NextResponse.json(
+        { error: "Invalid date format" },
+        { status: 400 }
+      );
+    }
+
+    const todayISO = new Date().toISOString().split("T")[0];
+    if (pickupDate < todayISO) {
+      return NextResponse.json(
+        { error: "Pickup date cannot be in the past" },
+        { status: 400 }
+      );
+    }
+
+    if (returnDate <= pickupDate) {
+      return NextResponse.json(
+        { error: "Return date must be after pickup date" },
         { status: 400 }
       );
     }
@@ -102,9 +144,46 @@ export async function POST(request: Request) {
       );
     }
 
-    // 4. Server-side price computation — all financial values derived server-side
-    const pickupMs = new Date(pickupDate).getTime();
-    const returnMs = new Date(returnDate).getTime();
+    // 3.5 Cleanup stale holds before checking availability
+    try {
+      await expireStaleBookings();
+    } catch (cleanupError) {
+      console.error("Cleanup error:", cleanupError);
+      return NextResponse.json(
+        { error: "Unable to verify vehicle availability (cleanup failed). Please try again." },
+        { status: 500 }
+      );
+    }
+
+    // 4. Server-side availability check (Half-open interval logic: [pickupDate, returnDate))
+    // Overlap: existing.pickup_date < requested.return_date AND existing.return_date > requested.pickup_date
+    const blockingStatuses = ["pending_payment", "advance_paid", "confirmed", "active", "cancel_requested"];
+    const { data: overlapping, error: overlapError } = await admin
+      .from("bookings")
+      .select("id")
+      .eq("vehicle_id", vehicle.id)
+      .in("booking_status", blockingStatuses)
+      .lt("pickup_date", returnDate)
+      .gt("return_date", pickupDate)
+      .limit(1);
+
+    if (overlapError) {
+      console.error("Availability check error:", overlapError);
+      return NextResponse.json(
+        { error: "Unable to verify vehicle availability. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    if (overlapping && overlapping.length > 0) {
+      return NextResponse.json(
+        { error: "Vehicle is no longer available for these dates. Please try different dates or another vehicle." },
+        { status: 409 }
+      );
+    }
+
+    // 5. Server-side price computation — all financial values derived server-side
+    // pickupMs and returnMs are already calculated during validation
     const days = Math.max(Math.ceil((returnMs - pickupMs) / 86_400_000), 1);
     const trustedTotal = vehicle.price_per_day * days;
     const trustedAdvance = Math.round(trustedTotal * 0.35); // 35% advance
@@ -196,12 +275,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Booking API error:", error);
     return NextResponse.json(
-      {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Failed to create booking",
-      },
+      { error: "Failed to create booking. Please try again." },
       { status: 500 }
     );
   }

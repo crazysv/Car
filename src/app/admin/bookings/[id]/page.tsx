@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@supabase/supabase-js";
 import { Section } from "@/components/section";
 import { AdminActions } from "./admin-actions";
+import { DocumentVerificationPanel } from "@/components/admin/document-verification-panel";
 
 export const metadata: Metadata = {
   title: "Admin Booking Details | JP Rentals",
@@ -67,6 +68,9 @@ interface AdminBookingDetail {
   customer_phone: string | null;
   customer_email: string | null;
   notes: string | null;
+  aadhaar_verified: boolean;
+  dl_verified: boolean;
+  docs_verified_at: string | null;
   created_at: string;
   vehicles: {
     name: string;
@@ -137,6 +141,9 @@ export default async function AdminBookingDetailPage({
       customer_phone,
       customer_email,
       notes,
+      aadhaar_verified,
+      dl_verified,
+      docs_verified_at,
       created_at,
       vehicles (name, year, slug, category, fuel_type, price_per_day),
       profiles (email, full_name, phone)
@@ -218,6 +225,14 @@ export default async function AdminBookingDetailPage({
             currentBookingStatus={b.booking_status}
             currentPaymentStatus={b.payment_status}
             paymentMode={b.payment_mode}
+          />
+
+          {/* Document Verification */}
+          <DocumentVerificationPanel
+            bookingId={b.id}
+            aadhaarVerified={b.aadhaar_verified}
+            dlVerified={b.dl_verified}
+            docsVerifiedAt={b.docs_verified_at}
           />
 
           {/* Customer & Vehicle Information */}

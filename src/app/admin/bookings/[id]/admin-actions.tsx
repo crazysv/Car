@@ -56,7 +56,8 @@ export function AdminActions({ bookingId, currentBookingStatus, currentPaymentSt
       )}
 
       <div className="mb-6">
-        <label className="block text-sm font-label-bold text-outline mb-2">Optional Internal Note</label>
+        <label className="block text-sm font-label-bold text-outline mb-1">Optional Internal Note</label>
+        <p className="text-xs text-outline/70 mb-2">This note is preserved in the booking&apos;s status history audit trail. It is not visible to the customer.</p>
         <input
           type="text"
           value={note}
@@ -114,13 +115,22 @@ export function AdminActions({ bookingId, currentBookingStatus, currentPaymentSt
 
         {/* Process Refunds */}
         {currentBookingStatus === "cancelled" && currentPaymentStatus === "paid" && (
-          <Button
-            variant="outline"
-            onClick={() => handleAction("refund_pending", "Refund Pending")}
-            disabled={!!loadingAction}
-          >
-            {loadingAction === "Refund Pending" ? "Processing..." : "Initiate Refund (Pending)"}
-          </Button>
+          <div className="w-full mt-4 border-t border-outline-variant pt-4">
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 p-4 rounded-xl text-sm mb-4">
+              <span className="font-bold flex items-center gap-2 mb-1">
+                <span className="material-symbols-outlined text-[16px]">warning</span>
+                Manual Refund Required
+              </span>
+              You must manually initiate the refund via your Razorpay Dashboard. Updating the status here only updates the operational tracking for the customer.
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => handleAction("refund_pending", "Refund Pending")}
+              disabled={!!loadingAction}
+            >
+              {loadingAction === "Refund Pending" ? "Processing..." : "Initiate Refund (Pending)"}
+            </Button>
+          </div>
         )}
 
         {currentBookingStatus === "refund_pending" && (

@@ -278,10 +278,15 @@ function EmptyState() {
         You haven&apos;t made any bookings. Browse our premium fleet and book
         your first self-drive rental today.
       </p>
-      <Button href="/fleet" size="lg">
-        <span className="material-symbols-outlined text-[20px]">search</span>
-        Browse Fleet
-      </Button>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <Button href="/fleet" size="lg">
+          <span className="material-symbols-outlined text-[20px]">search</span>
+          Browse Fleet
+        </Button>
+        <a href="tel:+917027705618" className="font-label-bold text-sm text-primary hover:text-secondary transition-colors underline underline-offset-4">
+          Need help? Call +91 70277 05618
+        </a>
+      </div>
     </div>
   );
 }
@@ -301,10 +306,15 @@ function ErrorState() {
         We couldn&apos;t retrieve your bookings right now. Please try again
         shortly or contact support if the issue persists.
       </p>
-      <Button href="/my-bookings" size="lg" variant="outline">
-        <span className="material-symbols-outlined text-[20px]">refresh</span>
-        Try Again
-      </Button>
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <Button href="/my-bookings" size="lg" variant="outline">
+          <span className="material-symbols-outlined text-[20px]">refresh</span>
+          Try Again
+        </Button>
+        <a href="tel:+917027705618" className="font-label-bold text-sm text-primary hover:text-secondary transition-colors underline underline-offset-4">
+          Need help? Call +91 70277 05618
+        </a>
+      </div>
     </div>
   );
 }

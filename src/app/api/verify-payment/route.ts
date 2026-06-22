@@ -5,6 +5,7 @@ import { getRazorpaySecret } from "@/lib/razorpay";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { sendPaymentSuccessEmail } from "@/lib/mailer";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -39,7 +40,35 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = (await request.json()) as VerifyPaymentRequest;
+    // Rate Limit: 20 requests per 5 minutes (300,000 ms)
+    const rateLimitKey = `verify_payment_${user.id}`;
+    if (!checkRateLimit(rateLimitKey, 20, 300_000)) {
+      return jsonResult(
+        {
+          success: false,
+          bookingRef: "",
+          status: "pending_payment",
+          error: "Too many attempts. Please wait a moment and try again.",
+        },
+        429
+      );
+    }
+
+    let body: VerifyPaymentRequest;
+    try {
+      body = (await request.json()) as VerifyPaymentRequest;
+    } catch {
+      return jsonResult(
+        {
+          success: false,
+          bookingRef: "",
+          status: "pending_payment",
+          error: "Invalid request body",
+        },
+        400
+      );
+    }
+
     const bookingId = body.bookingId?.trim();
     const paymentId = body.razorpay_payment_id?.trim();
     const orderId = body.razorpay_order_id?.trim();

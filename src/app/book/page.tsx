@@ -52,16 +52,20 @@ export default function BookPage() {
           <AccordionGroup
             items={[
               {
-                question: "How does the payment work?",
-                answer: `A ${siteConfig.booking.advancePercent}% advance is required to confirm your booking. You can pay online or offline. The remaining amount is due at vehicle handover.`,
+                question: "Do I need to pay the full amount online?",
+                answer: `No, you only need to pay a ${siteConfig.booking.advancePercent}% advance to confirm your booking. The remaining rental amount and the \u20B9${siteConfig.booking.securityDeposit.toLocaleString("en-IN")} refundable security deposit are paid at the time of vehicle handover.`,
               },
               {
-                question: "What documents do I need?",
-                answer: `You need a valid ${siteConfig.booking.requiredDocuments.join(" and ")}. Both must be original documents.`,
+                question: "What documents are required?",
+                answer: `You must present your original Aadhaar Card and a valid Driving Licence at the time of handover. Both documents will be verified.`,
               },
               {
-                question: "Can I cancel my booking?",
-                answer: `Yes, cancellation is available within ${siteConfig.booking.cancellationHours} hours of booking for a full refund.`,
+                question: "What if my online payment fails?",
+                answer: `If your advance payment fails, your booking request is still saved. You can retry the payment from your 'My Bookings' page or contact our support team.`,
+              },
+              {
+                question: "How can I contact JP Rentals directly?",
+                answer: `You can reach us at ${siteConfig.phoneFormatted} via phone call or WhatsApp. We are happy to help with any questions.`,
               },
             ]}
           />
@@ -96,3 +100,4 @@ function BookingFormSkeleton() {
     </div>
   );
 }
+

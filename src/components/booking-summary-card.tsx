@@ -72,6 +72,29 @@ export function BookingSummaryCard({ vehicle }: BookingSummaryCardProps) {
         >
           Proceed to Booking
         </Button>
+
+        {/* Support Links */}
+        <div className="pt-6 border-t border-outline-variant mt-6 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-outline mb-3">
+            Need help before booking?
+          </p>
+          <div className="flex items-center gap-3">
+            <a
+              href={`https://wa.me/${siteConfig.phone.replace(/[^0-9]/g, "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 flex justify-center items-center gap-2 px-3 py-2.5 bg-[#25D366]/10 border border-[#25D366]/30 rounded-lg text-[#128C7E] text-xs font-bold hover:bg-[#25D366]/20 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">chat</span> WhatsApp
+            </a>
+            <a
+              href={siteConfig.phoneHref}
+              className="flex-1 flex justify-center items-center gap-2 px-3 py-2.5 bg-surface border border-outline-variant rounded-lg text-primary text-xs font-bold hover:border-secondary transition-colors"
+            >
+              <span className="material-symbols-outlined text-[16px]">call</span> Call Us
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
