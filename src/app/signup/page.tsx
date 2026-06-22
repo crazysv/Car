@@ -25,8 +25,9 @@ function formatSignupError(message: string) {
   if (normalized.includes("email")) {
     return "Please enter a valid email address.";
   }
-  return "We couldn’t create your account. Please check your details and try again.";
+  return "We couldn't create your account. Please check your details and try again.";
 }
+
 export default function SignupPage() {
   const router = useRouter();
 
@@ -107,7 +108,7 @@ export default function SignupPage() {
                 </div>
                 <h2 className="font-headline-md text-primary mb-4">Check Your Email</h2>
                 <p className="font-body-lg text-outline mb-8">
-                  We&apos;ve sent a confirmation link to <strong className="text-primary">{email}</strong>.
+                  We've sent a confirmation link to <strong className="text-primary">{email}</strong>.
                   Please check your inbox and confirm your account to get started.
                 </p>
                 <Link
@@ -213,4 +214,3 @@ export default function SignupPage() {
     </>
   );
 }
-
