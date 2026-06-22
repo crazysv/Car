@@ -6,6 +6,27 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { Section } from "@/components/section";
 
+function getPasswordError(password: string) {
+  if (password.length < 8) return "Use at least 8 characters.";
+  if (!/[a-z]/.test(password)) return "Add at least one lowercase letter.";
+  if (!/[A-Z]/.test(password)) return "Add at least one uppercase letter.";
+  if (!/\d/.test(password)) return "Add at least one number.";
+  return "";
+}
+
+function formatSignupError(message: string) {
+  const normalized = message.toLowerCase();
+  if (normalized.includes("password")) {
+    return "Please choose a stronger password with uppercase, lowercase, and a number.";
+  }
+  if (normalized.includes("already") || normalized.includes("registered")) {
+    return "An account already exists for this email. Please sign in instead.";
+  }
+  if (normalized.includes("email")) {
+    return "Please enter a valid email address.";
+  }
+  return "We couldn’t create your account. Please check your details and try again.";
+}
 export default function SignupPage() {
   const router = useRouter();
 
@@ -25,11 +46,11 @@ export default function SignupPage() {
       return;
     }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
+    const passwordError = getPasswordError(password);
+    if (passwordError) {
+      setError(passwordError);
       return;
     }
-
     setLoading(true);
 
     const supabase = createClient();
@@ -42,7 +63,7 @@ export default function SignupPage() {
     });
 
     if (authError) {
-      setError(authError.message);
+      setError(formatSignupError(authError.message));
       setLoading(false);
       return;
     }
@@ -134,9 +155,9 @@ export default function SignupPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 6 characters"
+                  placeholder="At least 8 characters"
                   required
-                  minLength={6}
+                  minLength={8}
                   className={fieldStyles}
                 />
               </div>
@@ -152,7 +173,7 @@ export default function SignupPage() {
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repeat your password"
                   required
-                  minLength={6}
+                  minLength={8}
                   className={fieldStyles}
                 />
               </div>
@@ -192,3 +213,4 @@ export default function SignupPage() {
     </>
   );
 }
+
